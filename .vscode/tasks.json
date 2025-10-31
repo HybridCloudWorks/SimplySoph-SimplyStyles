@@ -1,0 +1,48 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Flutter: Clean",
+      "type": "shell",
+      "command": "flutter clean",
+      "problemMatcher": []
+    },
+    {
+      "label": "Flutter: Get Packages",
+      "type": "shell",
+      "command": "flutter pub get",
+      "problemMatcher": []
+    },
+    {
+      "label": "Flutter: Analyze",
+      "type": "shell",
+      "command": "flutter analyze",
+      "problemMatcher": []
+    },
+    {
+      "label": "Flutter: Test",
+      "type": "shell",
+      "command": "flutter test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Flutter: Build APK",
+      "type": "shell",
+      "command": "flutter build apk",
+      "problemMatcher": []
+    },
+    {
+      "label": "Firebase: Deploy Functions",
+      "type": "shell",
+      "command": "cd functions && firebase deploy --only functions",
+      "problemMatcher": []
+    },
+    {
+      "label": "Firebase: Serve Functions Locally",
+      "type": "shell",
+      "command": "cd functions && firebase emulators:start --only functions",
+      "problemMatcher": [],
+      "isBackground": true
+    }
+  ]
+}

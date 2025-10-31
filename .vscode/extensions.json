@@ -1,0 +1,27 @@
+{
+  "recommendations": [
+    // Essential for Flutter development
+    "dart-code.flutter",
+    "dart-code.dart-code",
+    
+    // Firebase integration
+    "toba.vsfire",
+    
+    // Git integration
+    "eamodio.gitlens",
+    
+    // Code quality
+    "streetsidesoftware.code-spell-checker",
+    
+    // Productivity
+    "usernamehw.errorlens",
+    "oderwat.indent-rainbow",
+    "pkief.material-icon-theme",
+    
+    // Snippets
+    "nash.awesome-flutter-snippets",
+    
+    // YAML support (for pubspec.yaml)
+    "redhat.vscode-yaml"
+  ]
+}
