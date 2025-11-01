@@ -1,15 +1,17 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const axios = require('axios');
+const express = require('express');
 
 admin.initializeApp();
+const app = express();
 
-// Configuration for Gemini Cortex AI
-const GEMINI_CORTEX_API_URL = 'https://your-gemini-cortex-endpoint.com/api';
-const GEMINI_CORTEX_API_KEY = functions.config().gemini.apikey;
+// Configuration for Cortex AI
+const CORTEX_API_URL = 'https://cortex-api.googleapis.com/v1/models/cortex-vision:analyze';
+const CORTEX_API_KEY = process.env.CORTEX_API_KEY || 'AQ.Ab8RN6Jre_GIXlpSyJt2oCyfbKUZNmT-Tmn73F8fK01ZSX04-A';
 
 /**
- * Analyzes a clothing item image using Gemini Cortex AI
+ * Analyzes a clothing item image using Cortex AI
  */
 exports.analyzeClothingItem = functions.https.onCall(async (data, context) => {
   // Verify authentication
@@ -30,19 +32,19 @@ exports.analyzeClothingItem = functions.https.onCall(async (data, context) => {
   }
 
   try {
-    // Call Gemini Cortex AI
+    // Call Cortex AI with timeout
     const response = await axios.post(
-      `${GEMINI_CORTEX_API_URL}/analyze-clothing`,
+      `${CORTEX_API_URL}?key=${CORTEX_API_KEY}`,
       {
-        imageUrl: imageUrl,
+        image_url: imageUrl,
         task: 'clothing_analysis',
-        preferences: userPreferences || {},
+        output_format: 'json'
       },
       {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${GEMINI_CORTEX_API_KEY}`,
         },
+        timeout: 30000
       }
     );
 
@@ -94,18 +96,19 @@ exports.generateStylePersonas = functions.https.onCall(async (data, context) => 
       );
     }
 
-    // Call Gemini Cortex AI
+    // Call Cortex AI with timeout
     const response = await axios.post(
-      `${GEMINI_CORTEX_API_URL}/generate-personas`,
+      `${CORTEX_API_URL}?key=${CORTEX_API_KEY}`,
       {
-        wardrobeItems: wardrobeItems,
+        wardrobe_items: wardrobeItems.slice(0, 10),
         task: 'persona_generation',
+        persona_count: 3
       },
       {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${GEMINI_CORTEX_API_KEY}`,
         },
+        timeout: 30000
       }
     );
 
@@ -194,19 +197,19 @@ exports.calculatePersonaFit = functions.https.onCall(async (data, context) => {
       );
     }
 
-    // Call Gemini Cortex AI
+    // Call Cortex AI with timeout
     const response = await axios.post(
-      `${GEMINI_CORTEX_API_URL}/calculate-fit`,
+      `${CORTEX_API_URL}?key=${CORTEX_API_KEY}`,
       {
-        itemAttributes: itemAttributes,
+        item_attributes: itemAttributes,
         personas: personas,
-        task: 'persona_fit',
+        task: 'persona_fit'
       },
       {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${GEMINI_CORTEX_API_KEY}`,
         },
+        timeout: 15000
       }
     );
 
@@ -227,20 +230,20 @@ exports.calculatePersonaFit = functions.https.onCall(async (data, context) => {
 /**
  * Scheduled function to update trend wall daily
  */
-exports.updateTrendWall = functions.pubsub
-  .schedule('every 24 hours')
-  .onRun(async (context) => {
+exports.updateTrendWall = functions.scheduler
+  .onSchedule('every 24 hours', async (context) => {
     try {
-      // Call Gemini Cortex AI for latest trends
+      // Call Cortex AI for latest trends
       const response = await axios.post(
-        `${GEMINI_CORTEX_API_URL}/analyze-trends`,
+        `${CORTEX_API_URL}?key=${CORTEX_API_KEY}`,
         {
-          task: 'trend_discovery',
+          task: 'trend_analysis',
+          focus_styles: ['Luxury Loungewear', 'New Preppy', 'Coastal Comfort'],
+          trend_count: 5
         },
         {
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${GEMINI_CORTEX_API_KEY}`,
           },
         }
       );
