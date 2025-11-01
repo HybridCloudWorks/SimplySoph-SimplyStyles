@@ -107,7 +107,7 @@ class DashboardTab extends StatelessWidget {
             const SizedBox(height: 24),
 
             // Quick Stats
-            Row(
+            const Row(
               children: [
                 Expanded(
                   child: _StatCard(
@@ -117,7 +117,7 @@ class DashboardTab extends StatelessWidget {
                     color: Colors.pink,
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Expanded(
                   child: _StatCard(
                     icon: Icons.person_outline,
