@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 
 class FinishPage extends StatelessWidget {
-  const FinishPage({Key? key}) : super(key: key);
+  const FinishPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(24.0),
-      child: Column(
+      child: const Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: const [
+        children: [
           Icon(
             Icons.check_circle_outline_rounded,
             size: 120,

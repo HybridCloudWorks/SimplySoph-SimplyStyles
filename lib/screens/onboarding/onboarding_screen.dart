@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:simplystyles/services/auth_service.dart';
+import 'package:simplystyles/auth/auth_service.dart';
 import 'package:simplystyles/services/firestore_service.dart';
 import 'package:simplystyles/state/onboarding_state.dart';
 import 'package:simplystyles/screens/onboarding/style_page.dart';
@@ -8,7 +8,7 @@ import 'package:simplystyles/screens/onboarding/color_page.dart';
 import 'package:simplystyles/screens/onboarding/finish_page.dart';
 
 class OnboardingScreen extends StatefulWidget {
-  const OnboardingScreen({Key? key}) : super(key: key);
+  const OnboardingScreen({super.key});
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -62,6 +62,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       // 3. HANDLE errors
       setState(() => _isLoading = false);
       
+      if (!mounted) return;
+
       // Show a snackbar error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -75,7 +77,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext ctxt) {
     return ChangeNotifierProvider(
       create: (_) => OnboardingState(),
       child: Scaffold(

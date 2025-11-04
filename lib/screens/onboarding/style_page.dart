@@ -4,10 +4,12 @@ import '../../state/onboarding_state.dart'; // Import the "brain"
 
 class StylePage extends StatelessWidget {
   // A list of style options the AI can learn from
-  final List<String> _styleOptions = [
+  static const List<String> _styleOptions = [
     'Casual', 'Chic', 'Sporty', 'Vintage',
     'Bohemian', 'Minimalist', 'Goth', 'Preppy',
   ];
+
+  const StylePage({super.key});
 
   @override
   Widget build(BuildContext context) {

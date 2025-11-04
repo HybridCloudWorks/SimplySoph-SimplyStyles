@@ -1,44 +1,46 @@
-# V1.0 TODO List
+# V1.0 "The Hook" - Coded TODO List
 
-This list is for tracking the initial "Persona MVP" build.
+This list is for the initial MVP. **Do not** add V1.5/V2.0 features here. Focus is speed.
 
-### 🏛️ Phase 1: Foundation & Security (The "Non-Negotiables")
-- [ ] Set up project repo (Git).
-- [x] Choose tech stack (e.g., Firebase, Supabase, Flutter/React Native, Python/Node.js backend).
-- [x] Implement core User Authentication system.
-- [ ] **Force Multi-Factor Authentication (MFA)** on all accounts.
-- [x] Create database schema for **Anonymous Profiles** (sizes, preferences, etc.).
-- [ ] Create database schema for **Persona Assets** (item_id, user_id, color, style, brand, stock_image_url).
-- [ ] **[RESEARCH]** Finalize security protocol for PII-free data storage.
+### 🏛️ Phase 1: Foundation (1-2 weeks)
+- [ ] Initialize Git repository.
+- [x] Decide and set up tech stack (Backend, Database, App Framework).
+- [x] Implement core User Authentication (e.g., Firebase Auth).
+- [ ] **Force Multi-Factor Authentication (MFA)** from day one.
+- [x] Database Schema (v1):
+    - [x] `users`: (user_id, [NO PII], profile_metrics: {sizes, colors, etc.})
+    - [ ] `wardrobe_items`: (item_id, user_id, persona_metrics: {color, style, brand}, image_url)
+- [ ] **[RESEARCH]** Finalize security protocol. How will we guarantee PII/photo-free storage?
 
-### 🧠 Phase 2: Core AI Engine (The "Vortex" v1)
-- [ ] **[RESEARCH]** Choose image recognition/vision API (e.g., Google Vision AI, Clarifai, or build custom model).
+### 🧠 Phase 2: The "Vortex" AI (The hard part)
+- [ ] **[RESEARCH]** Select and test Image Recognition APIs (Google Vision, Clarifai, etc.).
 - [ ] Build the "Image-to-Metrics" pipeline:
-    - [ ] **[CRITICAL]** Build AI function to detect and **redact faces/backgrounds** from user-uploaded images.
-    - [ ] Build AI function to identify **Color** from an image.
-    - [ ] Build AI function to identify **Style/Category** (e.g., "v-neck sweater," "denim jeans").
-    - [ ] Build function to search for and save a **stock photo** of the identified item.
-- [ ] Build the "Prime Persona" (v1) algorithm:
-    - [ ] Function to analyze all `Persona Assets` for a user.
-    - [ ] Function to determine a "dominant style" (e.g., 40% "Boho," 30% "Classic," 30% "Sporty").
+    - [ ] **[CRITICAL-SAFETY]** Build the AI function to **redact faces/backgrounds**. This must run *before* any image is stored.
+    - [ ] **[AI-TASK]** Build Color identification function.
+    - [ ] **[AI-TASK]** Build Style/Category identification function (e.g., "v-neck sweater").
+    - [ ] **[AI-TASK]** Build Brand identification (if possible, low-priority).
+    - [ ] **[FEATURE]** Build the "Stock Photo Finder" function to replace user photos.
+- [ ] Build "Prime Persona" (v1) algorithm:
+    - [ ] Function to analyze all `wardrobe_items` for a user.
+    - [ ] Function to calculate and save the user's "dominant style" (e.g., 70% "Classic").
 
-### 📱 Phase 3: User Interface (The App)
-- [ ] Build "My Profile" screen (for sizes, etc.).
+### 📱 Phase 3: The "Hook" UI (The App)
+- [ ] Build "Onboarding" flow (Account creation, Profile metrics input).
 - [ ] Build **Wardrobe Ingestion Flow**:
     - [ ] Camera access UI.
     - [ ] File upload UI.
-    - [ ] Loading/processing screen while "Vortex" AI is working.
-- [ ] Build "Digital Closet" UI (gallery view of all `Persona Assets`).
-- [ ] Build "AI-Driven Styles" UI:
+    - [ ] "Analyzing your item..." loading/processing screen.
+- [ ] Build "Digital Closet" UI (A simple gallery of `wardrobe_items`).
+- [ ] Build "Prime Persona" (v1) UI:
+    - [ ] A simple, delightful screen showing the user's Persona *after* they hit 15 items. This must feel like a "reward."
+- [ ] Build "AI-Driven Styles" (v1) UI:
     - [ ] "Get Styled" button.
-    - [ ] Screen to display AI-recommended outfits (e.g., "Wear this top with this bottom").
+    - [ ] UI to display recommended *combinations* of their own clothes.
 - [ ] Build "Glam Room" (v1) UI:
-    - [ ] A vertical feed (like Instagram) of curated items.
-    - [ ] Commenting feature.
-    - [ ] "Buy Now" button (opens affiliate link in a web browser).
+    - [ ] A *very simple* feed. Do not over-engineer this.
+    - [ ] "Buy" button (opens affiliate link in-app browser).
 
-### 💸 Phase 4: Monetization & Launch Prep
-- [ ] Sign up for affiliate programs (e.g., Amazon Associates, Rakuten, direct brand partnerships).
-- [ ] Create internal admin panel to add/manage "Glam Room" items and affiliate links.
-- [ ] Final security audit.
-- [ ] Deploy backend and submit app to stores.
+### 🚀 Phase 4: Launch Prep
+- [ ] Set up basic affiliate link management (even a simple spreadsheet/Airtable).
+- [ ] Final security and privacy audit.
+- [ ] Deploy backend and submit apps to stores.

@@ -71,7 +71,7 @@ class ColorPage extends StatelessWidget {
                             color: colorValue == Colors.white ? Colors.grey.shade300 : Colors.transparent,
                           ),
                           // Show a visible "check" mark
-                          boxShadow: isSelected ? [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 5, spreadRadius: 1)] : [],
+                          boxShadow: isSelected ? [BoxShadow(color: Colors.black.withAlpha(77), blurRadius: 5, spreadRadius: 1)] : [],
                         ),
                         child: isSelected
                             ? Icon(

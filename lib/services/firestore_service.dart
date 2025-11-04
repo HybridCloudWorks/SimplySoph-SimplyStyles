@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../models/clothing_item.dart';
 import '../models/style_persona.dart';
 
@@ -102,7 +103,7 @@ class FirestoreService {
       });
     } catch (e) {
       // Handle errors
-      print('Error saving onboarding data: $e');
+      debugPrint('Error saving onboarding data: $e');
       rethrow; // Re-throw the error so the UI can catch it
     }
   }
