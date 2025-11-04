@@ -4,12 +4,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService extends ChangeNotifier {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  late final FirebaseAuth _auth;
+  late final FirebaseFirestore _firestore;
 
   User? get currentUser => _auth.currentUser;
 
-  AuthService() {
+  AuthService({FirebaseAuth? auth, FirebaseFirestore? firestore}) {
+    _auth = auth ?? FirebaseAuth.instance;
+    _firestore = firestore ?? FirebaseFirestore.instance;
     _auth.authStateChanges().listen((User? user) {
       notifyListeners();
     });

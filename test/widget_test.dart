@@ -1,30 +1,97 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
+import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
+import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
+import 'package:provider/provider.dart';
+import 'package:simplystyles/auth/auth_service.dart';
 import 'package:simplystyles/main.dart';
+import 'package:simplystyles/screens/auth/login_screen.dart';
+import 'package:simplystyles/screens/home/home_screen.dart';
+import 'package:simplystyles/screens/onboarding/onboarding_screen.dart';
+import 'package:simplystyles/services/database_service.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  // A helper function to wrap our app in the necessary providers
+  // for a given test.
+  Widget createTestApp({
+    required MockFirebaseAuth auth,
+    required FakeFirebaseFirestore firestore,
+  }) {
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => AuthService(auth: auth, firestore: firestore),
+        ),
+        Provider<DatabaseService>(
+          create: (_) => DatabaseService(firestore: firestore),
+        ),
+      ],
+      child: const SimplyStylesApp(),
+    );
+  }
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  testWidgets('App smoke test (logged out)', (WidgetTester tester) async {
+    // --- ARRANGE ---
+    final fakeAuth = MockFirebaseAuth(signedIn: false);
+    final fakeFirestore = FakeFirebaseFirestore();
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    // --- ACT ---
+    await tester.pumpWidget(createTestApp(
+      auth: fakeAuth,
+      firestore: fakeFirestore,
+    ));
+    await tester.pumpAndSettle();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // --- ASSERT ---
+    expect(find.byType(LoginScreen), findsOneWidget);
+    expect(find.byType(HomeScreen), findsNothing);
+  });
+
+  testWidgets('App shows HomeScreen when user is logged in and onboarded', (WidgetTester tester) async {
+    // --- ARRANGE ---
+    final fakeUser = MockUser(uid: 'logged-in-onboarded-123', email: 'home@example.com');
+    final fakeAuth = MockFirebaseAuth(signedIn: true, mockUser: fakeUser);
+    final fakeFirestore = FakeFirebaseFirestore();
+    // Add the user document marking onboarding as complete
+    await fakeFirestore.collection('users').doc(fakeUser.uid).set({
+      'email': fakeUser.email,
+      'onboardingComplete': true,
+    });
+
+
+    // --- ACT ---
+    await tester.pumpWidget(createTestApp(
+      auth: fakeAuth,
+      firestore: fakeFirestore,
+    ));
+    await tester.pumpAndSettle();
+
+    // --- ASSERT ---
+    expect(find.byType(LoginScreen), findsNothing);
+    expect(find.byType(HomeScreen), findsOneWidget);
+  });
+
+  testWidgets('App shows OnboardingScreen for logged in user who is not onboarded', (WidgetTester tester) async {
+    // --- ARRANGE ---
+    final fakeUser = MockUser(uid: 'logged-in-not-onboarded-456', email: 'new@example.com');
+    final fakeAuth = MockFirebaseAuth(signedIn: true, mockUser: fakeUser);
+    final fakeFirestore = FakeFirebaseFirestore();
+    // Add the user document marking onboarding as INCOMPLETE
+    await fakeFirestore.collection('users').doc(fakeUser.uid).set({
+      'email': fakeUser.email,
+      'onboardingComplete': false,
+    });
+
+    // --- ACT ---
+    await tester.pumpWidget(createTestApp(
+      auth: fakeAuth,
+      firestore: fakeFirestore,
+    ));
+    await tester.pumpAndSettle();
+
+    // --- ASSERT ---
+    expect(find.byType(OnboardingScreen), findsOneWidget);
+    expect(find.byType(HomeScreen), findsNothing);
+    expect(find.byType(LoginScreen), findsNothing);
   });
 }
