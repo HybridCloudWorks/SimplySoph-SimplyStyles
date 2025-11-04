@@ -81,4 +81,29 @@ class FirestoreService {
   Future<void> updateUserProfile(String userId, Map<String, dynamic> updates) async {
     await _firestore.collection('users').doc(userId).update(updates);
   }
+
+  /// Saves the user's onboarding choices to Firestore and
+  /// marks their onboarding as complete.
+  Future<void> saveAndCompleteOnboarding({
+    required String uid,
+    required String? style,
+    required List<String> colors,
+  }) async {
+    try {
+      // We use 'update' here because we're adding fields to an
+      // existing user document that was created at sign-up.
+      await _firestore.collection('users').doc(uid).update({
+        'stylePreference': style,
+        'favoriteColors': colors,
+        // ... (add any other fields you collected)
+        
+        // This is the magic flag our AuthWrapper is listening for!
+        'onboardingComplete': true, 
+      });
+    } catch (e) {
+      // Handle errors
+      print('Error saving onboarding data: $e');
+      rethrow; // Re-throw the error so the UI can catch it
+    }
+  }
 }
