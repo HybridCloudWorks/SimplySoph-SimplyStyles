@@ -1,58 +1,44 @@
-# Project TODO & Development Phases
+# V1.0 TODO List
 
-This document outlines the planned features and the development progress of the SimplyStyles application. It is divided into phases, with completed items checked off.
+This list is for tracking the initial "Persona MVP" build.
 
-## Phase 1: Foundation & Authentication (Completed)
+### 🏛️ Phase 1: Foundation & Security (The "Non-Negotiables")
+- [ ] Set up project repo (Git).
+- [x] Choose tech stack (e.g., Firebase, Supabase, Flutter/React Native, Python/Node.js backend).
+- [x] Implement core User Authentication system.
+- [ ] **Force Multi-Factor Authentication (MFA)** on all accounts.
+- [x] Create database schema for **Anonymous Profiles** (sizes, preferences, etc.).
+- [ ] Create database schema for **Persona Assets** (item_id, user_id, color, style, brand, stock_image_url).
+- [ ] **[RESEARCH]** Finalize security protocol for PII-free data storage.
 
-This phase focused on setting up the basic project structure, integrating Firebase, and implementing the core user authentication system.
+### 🧠 Phase 2: Core AI Engine (The "Vortex" v1)
+- [ ] **[RESEARCH]** Choose image recognition/vision API (e.g., Google Vision AI, Clarifai, or build custom model).
+- [ ] Build the "Image-to-Metrics" pipeline:
+    - [ ] **[CRITICAL]** Build AI function to detect and **redact faces/backgrounds** from user-uploaded images.
+    - [ ] Build AI function to identify **Color** from an image.
+    - [ ] Build AI function to identify **Style/Category** (e.g., "v-neck sweater," "denim jeans").
+    - [ ] Build function to search for and save a **stock photo** of the identified item.
+- [ ] Build the "Prime Persona" (v1) algorithm:
+    - [ ] Function to analyze all `Persona Assets` for a user.
+    - [ ] Function to determine a "dominant style" (e.g., 40% "Boho," 30% "Classic," 30% "Sporty").
 
-- [x] Set up the Firebase project and integrate it with the Flutter application.
-- [x] Implement user authentication (sign-up and login) using Firebase Authentication.
-- [x] Create a dedicated `AuthService` to encapsulate all authentication-related logic, keeping the UI clean.
-- [x] Build placeholder UI for the `LoginScreen` and `HomeScreen`.
-- [x] Write a suite of widget tests to ensure the authentication flow is working correctly under various conditions (logged in, logged out).
+### 📱 Phase 3: User Interface (The App)
+- [ ] Build "My Profile" screen (for sizes, etc.).
+- [ ] Build **Wardrobe Ingestion Flow**:
+    - [ ] Camera access UI.
+    - [ ] File upload UI.
+    - [ ] Loading/processing screen while "Vortex" AI is working.
+- [ ] Build "Digital Closet" UI (gallery view of all `Persona Assets`).
+- [ ] Build "AI-Driven Styles" UI:
+    - [ ] "Get Styled" button.
+    - [ ] Screen to display AI-recommended outfits (e.g., "Wear this top with this bottom").
+- [ ] Build "Glam Room" (v1) UI:
+    - [ ] A vertical feed (like Instagram) of curated items.
+    - [ ] Commenting feature.
+    - [ ] "Buy Now" button (opens affiliate link in a web browser).
 
-## Phase 2: Onboarding Flow Architecture (Completed)
-
-This phase established the logic for handling new users after they sign up, guiding them toward an onboarding process before they can access the main application.
-
-- [x] Create a `DatabaseService` to manage all non-authentication-related interactions with Cloud Firestore.
-- [x] Implement the critical "gatekeeper" widget (`AuthWrapper`) that intelligently routes users based on both their authentication and onboarding status.
-- [x] Create a placeholder `OnboardingScreen` to serve as the entry point for the new user style quiz.
-- [x] Add the `completeOnboarding` method to the `DatabaseService` and connect it to a button on the `OnboardingScreen` to finalize the onboarding process.
-- [x] Write comprehensive widget tests to verify the new, more complex navigation logic, ensuring users are routed correctly based on their `onboardingComplete` status in Firestore.
-
-## Phase 3: Multi-Page Onboarding UI & State
-
-This phase will transform the placeholder onboarding screen into a multi-page, swipeable "style quiz" and create a centralized state management solution for the onboarding flow.
-
-- [ ] **Step 1: The UI Skeleton (PageView)**
-    - [ ] In `lib/screens/onboarding/onboarding_screen.dart`, add a `PageController` to manage the `PageView` state.
-    - [ ] Replace the current `Scaffold` body with a `PageView` widget to create the swipeable screen effect.
-    - [ ] Add temporary, colored `Container` widgets as the initial pages to visually confirm the `PageView` is working.
-
-- [ ] **Step 2: The State "Brain" (ChangeNotifier)**
-    - [ ] Create the file `lib/state/onboarding_state.dart`.
-    - [ ] Inside the new file, define an `OnboardingState` class that mixes in `ChangeNotifier`.
-    - [ ] Add the initial state properties required for the AI, such as `stylePreference` and `favoriteColors`, along with methods to update them (`setStyle`, `toggleColor`).
-    - [ ] In `onboarding_screen.dart`, wrap the `Scaffold` in a `ChangeNotifierProvider` to make the `OnboardingState` available to all pages within the `PageView`.
-
-## Phase 4: Onboarding "AI Questions"
-
-This phase involves building the individual pages of the style quiz, each focusing on a specific question to gather user preferences.
-
-- [ ] **Step 3: The "AI Questions" (The Pages)**
-    - [ ] Create a `style_page.dart` widget that allows users to select their preferred style.
-    - [ ] Create a `color_page.dart` widget with a grid of color swatches for users to pick their favorites.
-    - [ ] Create a `goal_page.dart` widget for users to specify what they want to get out of the app.
-
-## Phase 5: Finalize Onboarding & Data Persistence
-
-This final phase will connect the data gathered during the onboarding quiz to the backend, saving the user's preferences and completing the onboarding flow.
-
-- [ ] **Step 4: The "Save & Finish" (The DatabaseService)**
-    - [ ] In `DatabaseService`, create a new method: `Future<void> saveOnboardingData(String uid, Map<String, dynamic> data)`.
-    - [ ] On the final page of the `PageView`, implement the "Finish" button's `onPressed` logic:
-        - [ ] Retrieve the collected data from the `OnboardingState` provider.
-        - [ ] Call the new `saveOnboardingData` method in the `DatabaseService` to persist the user's choices to Firestore.
-        - [ ] Call the existing `completeOnboarding` method to flag the user as fully onboarded, triggering the automatic navigation to the `HomeScreen`.
+### 💸 Phase 4: Monetization & Launch Prep
+- [ ] Sign up for affiliate programs (e.g., Amazon Associates, Rakuten, direct brand partnerships).
+- [ ] Create internal admin panel to add/manage "Glam Room" items and affiliate links.
+- [ ] Final security audit.
+- [ ] Deploy backend and submit app to stores.
