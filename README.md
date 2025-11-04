@@ -1,207 +1,44 @@
-# SimplyStyles
+# SimplyStyles - Your AI-Powered Wardrobe Assistant
 
-**An AI-Powered Wardrobe Assistant for Gen Z Fashionistas**
+## About The Project
 
-SimplyStyles is a mobile application built with Flutter and Firebase that helps users digitize their closet, analyze their fashion style, and receive personalized recommendations powered by Gemini Cortex AI.
+SimplyStyles is a Flutter-based mobile application designed to revolutionize how users interact with their wardrobe. It acts as a personal stylist in your pocket, leveraging the power of AI to provide personalized outfit recommendations, help organize your closet, and assist you in discovering new styles tailored to your unique preferences.
 
-## Features
+The core mission is to make fashion simple, accessible, and fun for everyone, removing the daily "what to wear" dilemma.
 
-### Smart Closet
-- **Barcode Scanning**: Auto-fetch brand, item type, color, and MSRP
-- **Photo Scanning**: AI-powered image recognition with background removal
-- **Manual Editing**: Override and customize item tags
+## Current Progress & Implemented Features
 
-### Style Persona Engine
-- **AI Analysis**: Gemini Cortex AI analyzes your wardrobe to identify style patterns
-- **Persona Generation**: Creates unique style personas based on your items
-- **Customization**: View, name, edit, and merge personas
+As of now, the foundational structure of the application is in place, focusing on user authentication and the initial onboarding pipeline.
 
-### Persona-Fit Scanner
-- **Live Camera**: Real-time scanning of new items
-- **AI Matching**: Calculates how well items fit your existing personas
-- **Smart Verdicts**: Get instant feedback with match percentages
+### Core Architecture
 
-### Trend Wall
-- **Curated Trends**: Discover emerging fashion aesthetics
-- **Wardrobe Matching**: See which trends align with your current items
-- **Persona Creation**: Build new personas based on trending styles
+*   **Firebase Integration**: The project is fully integrated with Firebase for backend services.
+*   **Authentication**: User sign-up and login functionality are implemented using **Firebase Authentication**. A dedicated `AuthService` handles all authentication-related logic, providing a clean interface for the UI.
+*   **Database**: **Cloud Firestore** is used as the database. A `DatabaseService` is set up to manage all interactions with Firestore, such as fetching and updating user data.
+*   **State Management**: The app uses the `provider` package for state management, allowing for a clean separation of concerns between the UI and the application logic.
 
-### Personalized Recommendations
-- **Persona-Based Shopping**: Recommendations organized by your style personas
-- **Smart Suggestions**: AI-powered item suggestions to expand your wardrobe
+### User Flow & Navigation
+
+The application features a robust "gatekeeper" widget (`AuthWrapper`) that directs users to the appropriate screen based on their authentication and onboarding status:
+
+1.  **Logged Out Users**: Are directed to the `LoginScreen`.
+2.  **Logged In, Not Onboarded Users**: Are directed to the `OnboardingScreen`. This is where they will input their style preferences.
+3.  **Logged In, Onboarded Users**: Are taken directly to the `HomeScreen` (placeholder).
+
+This routing is handled reactively by streaming user data from Firestore, ensuring the UI always reflects the user's current state.
+
+### Testing
+
+The project includes a suite of widget tests to guarantee the reliability of the core authentication and navigation flow. These tests use `firebase_auth_mocks` and `fake_cloud_firestore` to simulate Firebase services, ensuring that:
+*   Logged-out users see the `LoginScreen`.
+*   Logged-in and fully onboarded users see the `HomeScreen`.
+*   Logged-in users who have not completed the new user quiz are correctly shown the `OnboardingScreen`.
 
 ## Technology Stack
 
-### Frontend
-- **Flutter 3.x**: Cross-platform mobile framework
-- **Dart 3.x**: Programming language
-- **Provider**: State management
-- **Material Design 3**: UI components
-
-### Backend
-- **Firebase Authentication**: User management
-- **Cloud Firestore**: NoSQL database
-- **Firebase Storage**: Image storage
-- **Cloud Functions**: Serverless backend logic
-- **Gemini Cortex AI**: Core AI intelligence
-
-## Getting Started
-
-### Prerequisites
-- Flutter SDK (3.0 or higher)
-- Firebase CLI
-- Node.js (18 or higher)
-- A Firebase project
-- Gemini Cortex AI API credentials
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/simplystyles.git
-   cd simplystyles
-   ```
-
-2. **Install Flutter dependencies**
-   ```bash
-   flutter pub get
-   ```
-
-3. **Set up Firebase**
-   - Create a new Firebase project at [Firebase Console](https://console.firebase.google.com/)
-   - Enable Authentication (Email/Password)
-   - Create a Firestore database
-   - Set up Firebase Storage
-   - Download and add your `google-services.json` (Android) and `GoogleService-Info.plist` (iOS)
-
-4. **Configure Gemini Cortex AI**
-   - Update `lib/api/gemini_cortex_api.dart` with your API endpoint and key
-   - Set the API key in Firebase Functions config:
-     ```bash
-     firebase functions:config:set gemini.apikey="YOUR_API_KEY"
-     ```
-
-5. **Deploy Firebase Functions**
-   ```bash
-   cd functions
-   npm install
-   firebase deploy --only functions
-   cd ..
-   ```
-
-6. **Run the app**
-   ```bash
-   flutter run
-   ```
-
-## Project Structure
-
-```
-lib/
-├── main.dart                 # App entry point
-├── api/
-│   └── gemini_cortex_api.dart   # Gemini Cortex AI integration
-├── auth/
-│   └── auth_service.dart        # Authentication logic
-├── models/
-│   ├── clothing_item.dart       # Clothing item data model
-│   └── style_persona.dart       # Style persona data model
-├── screens/
-│   ├── auth/                    # Login and signup screens
-│   ├── home/                    # Dashboard
-│   ├── closet/                  # Smart closet
-│   ├── scanner/                 # Persona-fit scanner
-│   ├── trends/                  # Trend wall
-│   └── shop/                    # Recommendations
-├── services/
-│   └── firestore_service.dart   # Database operations
-└── widgets/                     # Reusable UI components
-
-functions/
-└── src/
-    └── index.js                 # Cloud Functions
-```
-
-## Firebase Security Rules
-
-### Firestore Rules
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    match /wardrobe_items/{itemId} {
-      allow read, write: if request.auth != null && 
-        resource.data.userId == request.auth.uid;
-    }
-    
-    match /style_personas/{personaId} {
-      allow read, write: if request.auth != null && 
-        resource.data.userId == request.auth.uid;
-    }
-    
-    match /trends/{trendId} {
-      allow read: if request.auth != null;
-      allow write: if false;
-    }
-  }
-}
-```
-
-### Storage Rules
-```javascript
-rules_version = '2';
-service firebase.storage {
-  match /b/{bucket}/o {
-    match /users/{userId}/{allPaths=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-  }
-}
-```
-
-## Fashion Style Classification
-
-SimplyStyles uses three core Gen Z fashion trends:
-
-1. **Luxury Loungewear**: Premium-priced, comfortable clothing worn as everyday fashion
-2. **New Preppy**: Bright colors, playful prints, matching sets (e.g., Roller Rabbit)
-3. **Coastal Comfort**: Relaxed, beach-inspired streetwear (e.g., Aviator Nation, Pink Palm Puff)
-
-## API Integration
-
-The app integrates with Gemini Cortex AI for:
-- Image analysis and clothing attribute extraction
-- Style persona generation through clustering
-- Persona-fit calculations
-- Trend analysis and discovery
-
-## Development Roadmap
-
-- [ ] Implement barcode scanning functionality
-- [ ] Add background removal for clothing images
-- [ ] Integrate product lookup APIs
-- [ ] Implement social sharing features
-- [ ] Add outfit generator
-- [ ] Integrate shopping affiliate links
-- [ ] Add AR virtual try-on
-- [ ] Implement sustainability scoring
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-This project is licensed under the MIT License.
-
-## Support
-
-For questions or issues, please open an issue on GitHub or contact the development team.
-
----
-
-**Built with ❤️ for Gen Z fashionistas**
+*   **Framework**: Flutter
+*   **Backend**: Firebase
+    *   Firebase Authentication
+    *   Cloud Firestore
+*   **State Management**: `provider`
+*   **Testing**: `flutter_test`, `firebase_auth_mocks`, `fake_cloud_firestore`
