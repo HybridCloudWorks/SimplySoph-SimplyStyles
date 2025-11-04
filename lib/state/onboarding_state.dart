@@ -18,7 +18,7 @@ class OnboardingState with ChangeNotifier {
     // This is the magic line. It tells any widget
     // listening to this object to rebuild.
     notifyListeners(); 
-    print('Onboarding state updated: Style set to $_stylePreference');
+    debugPrint('Onboarding state updated: Style set to $_stylePreference');
   }
 
   // --- Property 2: Favorite Colors ---
@@ -35,7 +35,7 @@ class OnboardingState with ChangeNotifier {
       _favoriteColors.add(color);
     }
     notifyListeners(); // Tell listeners to rebuild
-    print('Onboarding state updated: Colors are now $_favoriteColors');
+    debugPrint('Onboarding state updated: Colors are now $_favoriteColors');
   }
 
   // --- Property 3: Goals ---

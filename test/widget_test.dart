@@ -9,7 +9,6 @@ import 'package:simplystyles/screens/auth/login_screen.dart';
 import 'package:simplystyles/screens/home/home_screen.dart';
 import 'package:simplystyles/screens/onboarding/onboarding_screen.dart';
 import 'package:simplystyles/services/database_service.dart';
-import 'package:simplystyles/state/onboarding_state.dart';
 
 void main() {
   // A helper function to wrap our app in the necessary providers
