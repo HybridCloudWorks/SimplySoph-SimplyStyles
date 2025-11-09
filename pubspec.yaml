@@ -45,3 +45,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  
+  fonts:
+    - family: HappyMonkey
+      fonts:
+        - asset: fonts/HappyMonkey-Regular.ttf
