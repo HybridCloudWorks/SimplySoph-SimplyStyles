@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../auth/auth_service.dart';
 import '../closet/smart_closet_screen.dart';
 import '../scanner/persona_fit_scanner_screen.dart';
-import '../trends/trend_wall_screen.dart';
 import '../shop/recommendations_screen.dart';
+import '../trends/trend_wall_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

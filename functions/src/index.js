@@ -8,7 +8,7 @@ const app = express();
 
 // Configuration for Cortex AI
 const CORTEX_API_URL = 'https://cortex-api.googleapis.com/v1/models/cortex-vision:analyze';
-const CORTEX_API_KEY = process.env.CORTEX_API_KEY || 'AQ.Ab8RN6Jre_GIXlpSyJt2oCyfbKUZNmT-Tmn73F8fK01ZSX04-A';
+const CORTEX_API_KEY = functions.config().cortex.apikey;
 
 /**
  * Analyzes a clothing item image using Cortex AI
