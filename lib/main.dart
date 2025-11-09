@@ -1,17 +1,37 @@
-import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'firebase_options.dart';
+
 import 'auth/auth_service.dart';
-import 'screens/auth/login_screen.dart';
-import 'screens/home/home_screen.dart';
+import 'auth/auth_wrapper.dart';
+import 'firebase_options.dart';
+import 'services/database_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(const SimplyStylesApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => AuthService(
+            auth: FirebaseAuth.instance,
+            firestore: FirebaseFirestore.instance,
+          ),
+        ),
+        Provider<DatabaseService>(
+          create: (_) => DatabaseService(
+            firestore: FirebaseFirestore.instance,
+          ),
+        ),
+      ],
+      child: const SimplyStylesApp(),
+    ),
+  );
 }
 
 class SimplyStylesApp extends StatelessWidget {
