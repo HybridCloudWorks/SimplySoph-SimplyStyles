@@ -28,11 +28,12 @@ class SimplyStylesApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           useMaterial3: true,
+          fontFamily: 'HappyMonkey',
           colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFFFF6B9D),
+            seedColor: const Color(0xFF8B5CF6),
             brightness: Brightness.light,
           ),
-          scaffoldBackgroundColor: const Color(0xFFFFF8FA),
+          scaffoldBackgroundColor: const Color(0xFFFAF8FF),
           appBarTheme: const AppBarTheme(
             centerTitle: true,
             elevation: 0,
