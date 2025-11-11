@@ -1,6 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService extends ChangeNotifier {
@@ -15,6 +15,42 @@ class AuthService extends ChangeNotifier {
     _auth.authStateChanges().listen((User? user) {
       notifyListeners();
     });
+    if (kIsWeb) {
+      _handleWebRedirectResult();
+    }
+  }
+
+  Future<void> _handleWebRedirectResult() async {
+    try {
+      final UserCredential result = await _auth.getRedirectResult();
+      if (result.user != null) {
+        final userCredential = result;
+        if (userCredential.additionalUserInfo?.isNewUser == true) {
+          await _firestore
+              .collection('users')
+              .doc(userCredential.user!.uid)
+              .set({
+            'email': userCredential.user!.email,
+            'displayName': userCredential.user!.displayName,
+            'photoURL': userCredential.user!.photoURL,
+            'createdAt': FieldValue.serverTimestamp(),
+            'onboardingComplete': false,
+            'preferences': {},
+            'provider': 'google',
+          });
+        }
+        notifyListeners();
+      }
+    } catch (_) {
+      // Ignore - no redirect result or not applicable
+    }
+  }
+
+  /// Trigger redirect sign-in for Google on web. UI can call this if popup fails.
+  Future<void> signInWithRedirectForGoogle() async {
+    if (!kIsWeb) return;
+    final GoogleAuthProvider googleProvider = GoogleAuthProvider();
+    await _auth.signInWithRedirect(googleProvider);
   }
 
   Future<String?> signUp({
@@ -80,39 +116,60 @@ class AuthService extends ChangeNotifier {
     try {
       if (kIsWeb) {
         final GoogleAuthProvider googleProvider = GoogleAuthProvider();
-        final UserCredential userCredential = await _auth.signInWithPopup(googleProvider);
-        
-        // Create user document if new user
-        if (userCredential.additionalUserInfo?.isNewUser == true) {
-          await _firestore.collection('users').doc(userCredential.user!.uid).set({
-            'email': userCredential.user!.email,
-            'displayName': userCredential.user!.displayName,
-            'photoURL': userCredential.user!.photoURL,
-            'createdAt': FieldValue.serverTimestamp(),
-            'onboardingComplete': false,
-            'preferences': {},
-            'provider': 'google',
-          });
+        try {
+          final UserCredential userCredential =
+              await _auth.signInWithPopup(googleProvider);
+
+          // Create user document if new user
+          if (userCredential.additionalUserInfo?.isNewUser == true) {
+            await _firestore
+                .collection('users')
+                .doc(userCredential.user!.uid)
+                .set({
+              'email': userCredential.user!.email,
+              'displayName': userCredential.user!.displayName,
+              'photoURL': userCredential.user!.photoURL,
+              'createdAt': FieldValue.serverTimestamp(),
+              'onboardingComplete': false,
+              'preferences': {},
+              'provider': 'google',
+            });
+          }
+
+          notifyListeners();
+          return null;
+        } on FirebaseAuthException catch (e) {
+          // Popup may be blocked in embedded browsers or the Simple Browser.
+          // Return a special code so the UI can show a helpful message and
+          // optionally fall back to redirect flow automatically.
+          if (e.code == 'popup-blocked' ||
+              e.code == 'popup_closed_by_user' ||
+              e.code == 'web-storage-unsupported') {
+            return 'ERROR_POPUP_BLOCKED';
+          }
+          return 'Google sign in failed: ${e.message ?? e.code}';
         }
-        
-        notifyListeners();
-        return null;
       } else {
         final GoogleSignIn googleSignIn = GoogleSignIn();
         final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
         if (googleUser == null) return 'Sign in cancelled';
 
-        final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+        final GoogleSignInAuthentication googleAuth =
+            await googleUser.authentication;
         final credential = GoogleAuthProvider.credential(
           accessToken: googleAuth.accessToken,
           idToken: googleAuth.idToken,
         );
 
-        final UserCredential userCredential = await _auth.signInWithCredential(credential);
-        
+        final UserCredential userCredential =
+            await _auth.signInWithCredential(credential);
+
         // Create user document if new user
         if (userCredential.additionalUserInfo?.isNewUser == true) {
-          await _firestore.collection('users').doc(userCredential.user!.uid).set({
+          await _firestore
+              .collection('users')
+              .doc(userCredential.user!.uid)
+              .set({
             'email': userCredential.user!.email,
             'displayName': userCredential.user!.displayName,
             'photoURL': userCredential.user!.photoURL,
@@ -134,8 +191,9 @@ class AuthService extends ChangeNotifier {
   Future<String?> signInWithApple() async {
     try {
       final appleProvider = AppleAuthProvider();
-      final UserCredential userCredential = await _auth.signInWithProvider(appleProvider);
-      
+      final UserCredential userCredential =
+          await _auth.signInWithProvider(appleProvider);
+
       // Create user document if new user
       if (userCredential.additionalUserInfo?.isNewUser == true) {
         await _firestore.collection('users').doc(userCredential.user!.uid).set({

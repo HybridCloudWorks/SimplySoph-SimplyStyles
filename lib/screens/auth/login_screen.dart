@@ -1,6 +1,10 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../auth/auth_service.dart';
+import '../../utils/web_view_detector_stub.dart'
+    if (dart.library.html) '../../utils/web_view_detector.dart';
 import 'signup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -15,6 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  String? _googleErrorCode;
 
   @override
   void dispose() {
@@ -47,14 +52,39 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     final authService = Provider.of<AuthService>(context, listen: false);
+
+    // If running in embedded webview, skip popup and use redirect directly.
+    if (kIsWeb && isEmbeddedWebView()) {
+      // Trigger redirect flow in auth service (direct redirect)
+      await authService.signInWithRedirectForGoogle();
+      setState(() {
+        _isLoading = false;
+        _googleErrorCode = 'ERROR_POPUP_BLOCKED';
+      });
+      return;
+    }
+
     final error = await authService.signInWithGoogle();
 
     setState(() => _isLoading = false);
 
     if (error != null && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error), backgroundColor: Colors.red),
-      );
+      if (error == 'ERROR_POPUP_BLOCKED') {
+        // Show a banner explaining popup blocked and that we'll use redirect.
+        setState(() => _googleErrorCode = error);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Popup blocked — falling back to redirect sign-in.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        // Trigger redirect flow automatically
+        await authService.signInWithRedirectForGoogle();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 
@@ -86,6 +116,21 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  if (_googleErrorCode == 'ERROR_POPUP_BLOCKED')
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withValues(alpha: 26),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.orange),
+                      ),
+                      child: const Text(
+                        'Popup blocked in this browser. Using redirect sign-in instead.',
+                        style: TextStyle(color: Colors.black87),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
                   // Logo and Title
                   const Icon(
                     Icons.checkroom_rounded,
