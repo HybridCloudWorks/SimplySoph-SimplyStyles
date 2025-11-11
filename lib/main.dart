@@ -5,8 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'auth/auth_service.dart';
-import 'auth/auth_wrapper.dart';
 import 'firebase_options.dart';
+import 'screens/auth/login_screen.dart';
+import 'screens/home/home_screen.dart';
 import 'services/database_service.dart';
 
 void main() async {
@@ -39,48 +40,43 @@ class SimplyStylesApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => AuthService()),
-      ],
-      child: MaterialApp(
-        title: 'SimplyStyles',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          useMaterial3: true,
-          fontFamily: 'HappyMonkey',
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF8B5CF6),
-            brightness: Brightness.light,
+    return MaterialApp(
+      title: 'SimplyStyles',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        useMaterial3: true,
+        fontFamily: 'HappyMonkey',
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF8B5CF6),
+          brightness: Brightness.light,
+        ),
+        scaffoldBackgroundColor: const Color(0xFFFAF8FF),
+        appBarTheme: const AppBarTheme(
+          centerTitle: true,
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+        ),
+        cardTheme: CardThemeData(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
-          scaffoldBackgroundColor: const Color(0xFFFAF8FF),
-          appBarTheme: const AppBarTheme(
-            centerTitle: true,
-            elevation: 0,
-            backgroundColor: Colors.transparent,
-          ),
-          cardTheme: CardThemeData(
-            elevation: 2,
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-          ),
-          elevatedButtonTheme: ElevatedButtonThemeData(
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+              borderRadius: BorderRadius.circular(12),
             ),
           ),
         ),
-        home: Consumer<AuthService>(
-          builder: (context, authService, _) {
-            return authService.currentUser != null
-                ? const HomeScreen()
-                : const LoginScreen();
-          },
-        ),
+      ),
+      home: Consumer<AuthService>(
+        builder: (context, authService, _) {
+          return authService.currentUser != null
+              ? const HomeScreen()
+              : const LoginScreen();
+        },
       ),
     );
   }
