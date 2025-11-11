@@ -1,5 +1,8 @@
 # SimplyStyles - Your AI-Powered Wardrobe Assistant
 
+[![CI/CD](https://github.com/saulpatinojr/SimplySoph-SimplyStyles/actions/workflows/firebase-hosting-deploy.yml/badge.svg)](https://github.com/saulpatinojr/SimplySoph-SimplyStyles/actions/workflows/firebase-hosting-deploy.yml)
+[![Firebase Hosting](https://img.shields.io/badge/Firebase-Hosting-orange?logo=firebase)](https://simplysoph-66c78.web.app)
+
 ## About The Project
 
 SimplyStyles is a Flutter-based mobile application designed to revolutionize how users interact with their wardrobe. It acts as a personal stylist in your pocket, leveraging the power of AI to provide personalized outfit recommendations, help organize your closet, and assist you in discovering new styles tailored to your unique preferences.
@@ -42,3 +45,22 @@ The project includes a suite of widget tests to guarantee the reliability of the
     *   Cloud Firestore
 *   **State Management**: `provider`
 *   **Testing**: `flutter_test`, `firebase_auth_mocks`, `fake_cloud_firestore`
+*   **CI/CD**: GitHub Actions with automated testing, building, and Firebase deployment
+
+## Deployment
+
+The app is automatically deployed to Firebase Hosting on every push to the `main` branch.
+
+- **Live App**: https://simplysoph-66c78.web.app
+- **Setup Guide**: See [CI_CD_SETUP.md](CI_CD_SETUP.md)
+- **Deployment Checklist**: See [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md)
+
+### Quick Start for CI/CD
+
+```bash
+# Windows: Run the setup script
+scripts\setup-cicd.bat
+
+# Linux/Mac: Run the bash script
+bash scripts/create_firebase_service_account.sh simplysoph-66c78 github-actions-deploy
+```
