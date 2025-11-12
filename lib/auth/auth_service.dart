@@ -1,12 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import '../services/email_service.dart';
 
 class AuthService extends ChangeNotifier {
   late final FirebaseAuth _auth;
   late final FirebaseFirestore _firestore;
 
   User? get currentUser => _auth.currentUser;
+
+  final EmailService _emailService = EmailService();
 
   AuthService({FirebaseAuth? auth, FirebaseFirestore? firestore}) {
     _auth = auth ?? FirebaseAuth.instance;
@@ -74,6 +77,9 @@ class AuthService extends ChangeNotifier {
         'onboardingComplete': false,
         'preferences': {},
       });
+
+      // Send welcome email
+      await _emailService.sendWelcomeEmail(email, displayName);
 
       notifyListeners();
       return null;

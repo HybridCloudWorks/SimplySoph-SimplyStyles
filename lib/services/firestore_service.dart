@@ -2,9 +2,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import '../models/clothing_item.dart';
 import '../models/style_persona.dart';
+import 'email_service.dart';
 
 class FirestoreService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final EmailService _emailService = EmailService();
 
   // Wardrobe Items
   Future<String> addClothingItem(ClothingItem item) async {
@@ -92,20 +94,24 @@ class FirestoreService {
     required List<String> colors,
   }) async {
     try {
-      // We use 'update' here because we're adding fields to an
-      // existing user document that was created at sign-up.
       await _firestore.collection('users').doc(uid).update({
         'stylePreference': style,
         'favoriteColors': colors,
-        // ... (add any other fields you collected)
-        
-        // This is the magic flag our AuthWrapper is listening for!
         'onboardingComplete': true, 
       });
+
+      // Send onboarding complete email
+      final userDoc = await _firestore.collection('users').doc(uid).get();
+      final userData = userDoc.data();
+      if (userData != null) {
+        await _emailService.sendOnboardingCompleteEmail(
+          userData['email'] ?? '',
+          userData['displayName'] ?? 'User',
+        );
+      }
     } catch (e) {
-      // Handle errors
       debugPrint('Error saving onboarding data: $e');
-      rethrow; // Re-throw the error so the UI can catch it
+      rethrow;
     }
   }
 }
