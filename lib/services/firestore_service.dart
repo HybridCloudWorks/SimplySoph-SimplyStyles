@@ -7,8 +7,9 @@ class FirestoreService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // Wardrobe Items
-  Future<void> addClothingItem(ClothingItem item) async {
-    await _firestore.collection('wardrobe_items').add(item.toFirestore());
+  Future<String> addClothingItem(ClothingItem item) async {
+    final docRef = await _firestore.collection('wardrobe_items').add(item.toFirestore());
+    return docRef.id;
   }
 
   Future<void> updateClothingItem(String itemId, Map<String, dynamic> updates) async {

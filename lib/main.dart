@@ -5,10 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'auth/auth_service.dart';
+import 'auth/auth_wrapper.dart';
 import 'firebase_options.dart';
-import 'screens/auth/login_screen.dart';
-import 'screens/home/home_screen.dart';
 import 'services/database_service.dart';
+import 'services/firestore_service.dart';
+import 'services/image_service.dart';
+import 'services/wardrobe_service.dart';
+import 'state/onboarding_state.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,6 +31,21 @@ void main() async {
           create: (_) => DatabaseService(
             firestore: FirebaseFirestore.instance,
           ),
+        ),
+        Provider<FirestoreService>(
+          create: (_) => FirestoreService(),
+        ),
+        Provider<ImageService>(
+          create: (_) => ImageService(),
+        ),
+        ProxyProvider2<FirestoreService, ImageService, WardrobeService>(
+          update: (_, firestoreService, imageService, __) => WardrobeService(
+            firestoreService: firestoreService,
+            imageService: imageService,
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => OnboardingState(),
         ),
       ],
       child: const SimplyStylesApp(),
@@ -71,13 +89,7 @@ class SimplyStylesApp extends StatelessWidget {
           ),
         ),
       ),
-      home: Consumer<AuthService>(
-        builder: (context, authService, _) {
-          return authService.currentUser != null
-              ? const HomeScreen()
-              : const LoginScreen();
-        },
-      ),
+      home: const AuthWrapper(),
     );
   }
 }

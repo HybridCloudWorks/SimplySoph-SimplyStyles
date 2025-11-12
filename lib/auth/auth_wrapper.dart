@@ -39,14 +39,15 @@ class AuthWrapper extends StatelessWidget {
           }
 
           if (!snapshot.hasData || !snapshot.data!.exists) {
-            // This case can happen if the user is authenticated but the document
-            // hasn't been created yet. You might want to show a loading screen
-            // or even log them out.
-            return const Scaffold(
-              body: Center(
-                child: Text('User data not found. Please try again.'),
-              ),
-            );
+            // User authenticated but no document - create it and go to onboarding
+            databaseService.createUserDocument(currentUser.uid, {
+              'email': currentUser.email,
+              'displayName': currentUser.displayName,
+              'photoURL': currentUser.photoURL,
+              'onboardingComplete': false,
+              'preferences': {},
+            });
+            return const OnboardingScreen();
           }
 
           final userData = snapshot.data!.data();
