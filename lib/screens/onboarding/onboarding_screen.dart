@@ -77,10 +77,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   @override
-  Widget build(BuildContext ctxt) {
-    return ChangeNotifierProvider(
-      create: (_) => OnboardingState(),
-      child: Scaffold(
+  Widget build(BuildContext context) {
+    return Scaffold(
         appBar: AppBar(
           title: const Text('Your Style Profile'),
           automaticallyImplyLeading: false,
@@ -147,7 +145,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
           ],
         ),
-      ),
     );
   }
 }

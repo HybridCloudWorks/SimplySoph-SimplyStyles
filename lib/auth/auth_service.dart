@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService extends ChangeNotifier {
   late final FirebaseAuth _auth;
@@ -150,38 +149,8 @@ class AuthService extends ChangeNotifier {
           return 'Google sign in failed: ${e.message ?? e.code}';
         }
       } else {
-        final GoogleSignIn googleSignIn = GoogleSignIn();
-        final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-        if (googleUser == null) return 'Sign in cancelled';
-
-        final GoogleSignInAuthentication googleAuth =
-            await googleUser.authentication;
-        final credential = GoogleAuthProvider.credential(
-          accessToken: googleAuth.accessToken,
-          idToken: googleAuth.idToken,
-        );
-
-        final UserCredential userCredential =
-            await _auth.signInWithCredential(credential);
-
-        // Create user document if new user
-        if (userCredential.additionalUserInfo?.isNewUser == true) {
-          await _firestore
-              .collection('users')
-              .doc(userCredential.user!.uid)
-              .set({
-            'email': userCredential.user!.email,
-            'displayName': userCredential.user!.displayName,
-            'photoURL': userCredential.user!.photoURL,
-            'createdAt': FieldValue.serverTimestamp(),
-            'onboardingComplete': false,
-            'preferences': {},
-            'provider': 'google',
-          });
-        }
-
-        notifyListeners();
-        return null;
+        // Mobile Google Sign-In not implemented yet
+        return 'Google Sign-In only available on web';
       }
     } catch (e) {
       return 'Google sign in failed: ${e.toString()}';
