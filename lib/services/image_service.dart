@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
@@ -10,6 +11,7 @@ const int _thumbnailQuality = 85;
 
 class ImageService {
   final FirebaseStorage _storage = FirebaseStorage.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   final Uuid _uuid = const Uuid();
 
   /// Upload clothing image and create thumbnail
@@ -19,6 +21,15 @@ class ImageService {
   }) async {
     if (userId.isEmpty) throw ArgumentError('userId cannot be empty');
     if (imagePath.isEmpty) throw ArgumentError('imagePath cannot be empty');
+
+    // Check authentication
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) {
+      throw Exception('User must be authenticated to upload images');
+    }
+    if (currentUser.uid != userId) {
+      throw Exception('User can only upload to their own storage');
+    }
 
     try {
       final itemId = _uuid.v4();
@@ -41,9 +52,10 @@ class ImageService {
         throw Exception('File size exceeds 10MB limit');
       }
 
-      // Upload original
+      // Upload original with metadata
       final originalRef = _storage.ref('users/$userId/wardrobe/original/$itemId.jpg');
-      await originalRef.putData(imageBytes);
+      final metadata = SettableMetadata(contentType: 'image/jpeg');
+      await originalRef.putData(imageBytes, metadata);
       final originalUrl = await originalRef.getDownloadURL();
 
       // Create and upload thumbnail
@@ -72,6 +84,15 @@ class ImageService {
     if (userId.isEmpty) throw ArgumentError('userId cannot be empty');
     if (imageBytes.isEmpty) throw ArgumentError('imageBytes cannot be empty');
 
+    // Check authentication
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) {
+      throw Exception('User must be authenticated to upload images');
+    }
+    if (currentUser.uid != userId) {
+      throw Exception('User can only upload to their own storage');
+    }
+
     // Validate file size
     if (imageBytes.length > _maxFileSizeBytes) {
       throw Exception('File size exceeds 10MB limit');
@@ -80,9 +101,10 @@ class ImageService {
     try {
       final itemId = _uuid.v4();
 
-      // Upload original
+      // Upload original with metadata
       final originalRef = _storage.ref('users/$userId/wardrobe/original/$itemId.jpg');
-      await originalRef.putData(imageBytes);
+      final metadata = SettableMetadata(contentType: 'image/jpeg');
+      await originalRef.putData(imageBytes, metadata);
       final originalUrl = await originalRef.getDownloadURL();
 
       // Create and upload thumbnail

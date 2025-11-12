@@ -1,6 +1,6 @@
 rules_version = '2';
 service firebase.storage {
-  match /b/simplysoph-66c78.firebasestorage.app/o {
+  match /b/{bucket}/o {
     // Users can only access their own files
     match /users/{userId}/{allPaths=**} {
       allow read: if request.auth != null && request.auth.uid == userId;
