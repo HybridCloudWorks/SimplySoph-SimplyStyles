@@ -5,7 +5,7 @@ import '../../auth/auth_service.dart';
 import '../closet/smart_closet_screen.dart';
 import '../scanner/persona_fit_scanner_screen.dart';
 import '../shop/recommendations_screen.dart';
-import '../trends/trend_wall_screen.dart';
+import '../closet/outfit_builder_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,7 +21,7 @@ class _HomeScreenState extends State<HomeScreen> {
     const DashboardTab(),
     const SmartClosetScreen(),
     const PersonaFitScannerScreen(),
-    const TrendWallScreen(),
+    const OutfitBuilderScreen(),
     const RecommendationsScreen(),
   ];
 
@@ -51,9 +51,9 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Scan',
           ),
           NavigationDestination(
-            icon: Icon(Icons.trending_up_outlined),
-            selectedIcon: Icon(Icons.trending_up),
-            label: 'Trends',
+            icon: Icon(Icons.auto_awesome_outlined),
+            selectedIcon: Icon(Icons.auto_awesome),
+            label: 'Outfits',
           ),
           NavigationDestination(
             icon: Icon(Icons.shopping_bag_outlined),

@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../models/clothing_item.dart';
 import 'firestore_service.dart';
 import 'image_service.dart';
+import 'email_service.dart';
 
 const List<String> _validCategories = ['top', 'bottom', 'dress', 'shoes', 'accessory'];
 
@@ -50,11 +51,11 @@ class WardrobeService {
         thumbnailUrl: imageUrls['thumbnail']!,
         category: category,
         color: '#000000',
-        dominantColors: [],
+        colors: [],
         brand: brand ?? '',
         msrp: msrp ?? 0,
         styleTag: 'casual',
-        tags: [],
+        styleTags: [],
         personaIds: [],
         scanMethod: 'upload',
         createdAt: DateTime.now(),
@@ -68,6 +69,17 @@ class WardrobeService {
       await _firestoreService.updateClothingItem(docId, {
         'storageItemId': storageItemId,
       });
+
+      // Check if this is user's first item
+      final itemCount = await getItemCount(userId);
+      if (itemCount == 1) {
+        final emailService = EmailService();
+        final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+        final email = userDoc.data()?['email'] as String?;
+        if (email != null) {
+          await emailService.sendFirstItemEmail(userId, email);
+        }
+      }
 
       return docId;
     } catch (e) {
@@ -112,11 +124,11 @@ class WardrobeService {
         thumbnailUrl: imageUrls['thumbnail']!,
         category: category,
         color: '#000000',
-        dominantColors: [],
+        colors: [],
         brand: brand ?? '',
         msrp: msrp ?? 0,
         styleTag: 'casual',
-        tags: [],
+        styleTags: [],
         personaIds: [],
         scanMethod: 'upload',
         createdAt: DateTime.now(),
