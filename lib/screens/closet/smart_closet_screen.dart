@@ -5,6 +5,9 @@ import '../../auth/auth_service.dart';
 import '../../models/clothing_item.dart';
 import '../../services/wardrobe_service.dart';
 import '../scanner/add_item_screen.dart';
+import 'item_detail_screen.dart';
+import 'search_screen.dart';
+import 'outfit_builder_screen.dart';
 
 class SmartClosetScreen extends StatelessWidget {
   const SmartClosetScreen({super.key});
@@ -26,6 +29,15 @@ class SmartClosetScreen extends StatelessWidget {
         title: const Text('My Closet'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SearchScreen()),
+              );
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.add),
             onPressed: () {
               Navigator.push(
@@ -40,7 +52,7 @@ class SmartClosetScreen extends StatelessWidget {
         stream: wardrobeService.getItems(userId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return _buildSkeletonGrid();
           }
 
           if (snapshot.hasError) {
@@ -90,6 +102,62 @@ class SmartClosetScreen extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildSkeletonGrid() {
+    return GridView.builder(
+      padding: const EdgeInsets.all(16),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        childAspectRatio: 0.75,
+      ),
+      itemCount: 6, // Show 6 skeleton items
+      itemBuilder: (context, index) => _SkeletonCard(),
+    );
+  }
+}
+
+class _SkeletonCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Container(
+              width: double.infinity,
+              color: Colors.grey[300],
+              child: const Center(
+                child: CircularProgressIndicator(),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  height: 12,
+                  width: 60,
+                  color: Colors.grey[300],
+                ),
+                const SizedBox(height: 4),
+                Container(
+                  height: 10,
+                  width: 40,
+                  color: Colors.grey[200],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _ItemCard extends StatelessWidget {
@@ -101,44 +169,54 @@ class _ItemCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: CachedNetworkImage(
-              imageUrl: item.thumbnailUrl,
-              fit: BoxFit.cover,
-              width: double.infinity,
-              placeholder: (context, url) => const Center(
-                child: CircularProgressIndicator(),
-              ),
-              errorWidget: (context, url, error) => const Icon(Icons.error),
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ItemDetailScreen(item: item),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.category.toUpperCase(),
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
+          );
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: CachedNetworkImage(
+                imageUrl: item.thumbnailUrl,
+                fit: BoxFit.cover,
+                width: double.infinity,
+                placeholder: (context, url) => const Center(
+                  child: CircularProgressIndicator(),
                 ),
-                if (item.brand.isNotEmpty)
+                errorWidget: (context, url, error) => const Icon(Icons.error),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    item.brand,
-                    style: TextStyle(
+                    item.category.toUpperCase(),
+                    style: const TextStyle(
                       fontSize: 12,
-                      color: Colors.grey[600],
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-              ],
+                  if (item.brand.isNotEmpty)
+                    Text(
+                      item.brand,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
