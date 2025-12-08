@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../../auth/auth_service.dart';
 import '../../models/clothing_item.dart';
 import '../../services/wardrobe_service.dart';
@@ -105,14 +104,46 @@ class _ItemCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: CachedNetworkImage(
-              imageUrl: item.thumbnailUrl,
-              fit: BoxFit.cover,
-              width: double.infinity,
-              placeholder: (context, url) => const Center(
-                child: CircularProgressIndicator(),
-              ),
-              errorWidget: (context, url, error) => const Icon(Icons.error),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.network(
+                  item.imageUrl,
+                  fit: BoxFit.cover,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return const Center(child: CircularProgressIndicator());
+                  },
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: Colors.grey[200],
+                      child: const Center(
+                        child: Icon(Icons.image_not_supported, size: 40),
+                      ),
+                    );
+                  },
+                ),
+                if (item.personaIds.isNotEmpty)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.7),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${(item.personaIds.length * 20).clamp(0, 100)}%',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
           Padding(
@@ -134,6 +165,15 @@ class _ItemCard extends StatelessWidget {
                       fontSize: 12,
                       color: Colors.grey[600],
                     ),
+                  ),
+                if (item.tags.isNotEmpty)
+                  Wrap(
+                    spacing: 4,
+                    children: item.tags.take(2).map((tag) => Chip(
+                      label: Text(tag, style: const TextStyle(fontSize: 10)),
+                      padding: EdgeInsets.zero,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    )).toList(),
                   ),
               ],
             ),

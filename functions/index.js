@@ -1,5 +1,6 @@
 const {onCall} = require('firebase-functions/v2/https');
 const {onSchedule} = require('firebase-functions/v2/scheduler');
+const {onObjectFinalized} = require('firebase-functions/v2/storage');
 const admin = require('firebase-admin');
 const {VertexAI} = require('@google-cloud/vertexai');
 
@@ -179,4 +180,71 @@ Return ONLY valid JSON array, no markdown.`;
 
   await batch.commit();
   console.log(`Updated ${trends.length} trends`);
+});
+
+exports.onImageUpload = onObjectFinalized({region: 'us-central1'}, async (event) => {
+  const filePath = event.data.name;
+  
+  if (!filePath.includes('/wardrobe/original/')) {
+    return null;
+  }
+
+  const pathParts = filePath.split('/');
+  const userId = pathParts[1];
+  const fileName = pathParts[pathParts.length - 1];
+  const itemId = fileName.replace('.jpg', '');
+
+  const bucket = admin.storage().bucket(event.data.bucket);
+  const file = bucket.file(filePath);
+  const [url] = await file.getSignedUrl({
+    action: 'read',
+    expires: Date.now() + 3600000,
+  });
+
+  const prompt = `Analyze this clothing item and return JSON:
+{
+  "category": "top/bottom/dress/shoes/accessory",
+  "color": "primary color",
+  "dominantColors": ["color1", "color2"],
+  "brand": "brand name or Unknown",
+  "styleTag": "casual/formal/sporty/elegant",
+  "tags": ["tag1", "tag2", "tag3"]
+}
+
+Return ONLY valid JSON.`;
+
+  try {
+    const result = await model.generateContent({
+      contents: [{
+        role: 'user',
+        parts: [
+          {text: prompt},
+          {inlineData: {mimeType: 'image/jpeg', data: (await file.download())[0].toString('base64')}}
+        ],
+      }],
+    });
+
+    const text = result.response.candidates[0].content.parts[0].text;
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    const analysis = jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(text);
+
+    const itemsSnapshot = await admin.firestore()
+      .collection('wardrobe_items')
+      .where('userId', '==', userId)
+      .where('storageItemId', '==', itemId)
+      .limit(1)
+      .get();
+
+    if (!itemsSnapshot.empty) {
+      await itemsSnapshot.docs[0].ref.update({
+        ...analysis,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      console.log(`AI analysis complete for item ${itemId}`);
+    }
+  } catch (error) {
+    console.error('AI analysis failed:', error);
+  }
+
+  return null;
 });

@@ -22,7 +22,7 @@ class ImageService {
     if (userId.isEmpty) throw ArgumentError('userId cannot be empty');
     if (imagePath.isEmpty) throw ArgumentError('imagePath cannot be empty');
 
-    // Check authentication
+    // Check authentication and refresh token
     final currentUser = _auth.currentUser;
     if (currentUser == null) {
       throw Exception('User must be authenticated to upload images');
@@ -30,6 +30,9 @@ class ImageService {
     if (currentUser.uid != userId) {
       throw Exception('User can only upload to their own storage');
     }
+
+    // Force token refresh to ensure valid authentication
+    await currentUser.getIdToken(true);
 
     try {
       final itemId = _uuid.v4();
@@ -84,7 +87,7 @@ class ImageService {
     if (userId.isEmpty) throw ArgumentError('userId cannot be empty');
     if (imageBytes.isEmpty) throw ArgumentError('imageBytes cannot be empty');
 
-    // Check authentication
+    // Check authentication and refresh token
     final currentUser = _auth.currentUser;
     if (currentUser == null) {
       throw Exception('User must be authenticated to upload images');
@@ -92,6 +95,9 @@ class ImageService {
     if (currentUser.uid != userId) {
       throw Exception('User can only upload to their own storage');
     }
+
+    // Force token refresh to ensure valid authentication
+    await currentUser.getIdToken(true);
 
     // Validate file size
     if (imageBytes.length > _maxFileSizeBytes) {
@@ -143,7 +149,8 @@ class ImageService {
     final thumbnailBytes = img.encodeJpg(thumbnail, quality: _thumbnailQuality);
 
     final thumbnailRef = _storage.ref('users/$userId/wardrobe/thumbnails/${itemId}_thumb.jpg');
-    await thumbnailRef.putData(Uint8List.fromList(thumbnailBytes));
+    final metadata = SettableMetadata(contentType: 'image/jpeg');
+    await thumbnailRef.putData(Uint8List.fromList(thumbnailBytes), metadata);
     return await thumbnailRef.getDownloadURL();
   }
 
