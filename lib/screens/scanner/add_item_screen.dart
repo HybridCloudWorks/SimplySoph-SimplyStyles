@@ -67,15 +67,38 @@ class _AddItemScreenState extends State<AddItemScreen> {
           SnackBar(
             content: Text('Invalid input: ${e.message}'),
             backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 4),
           ),
         );
       }
     } catch (e) {
       if (mounted) {
+        String errorMessage = 'Upload failed';
+        
+        // Parse common Firebase errors
+        final errorStr = e.toString().toLowerCase();
+        if (errorStr.contains('unauthorized') || errorStr.contains('permission')) {
+          errorMessage = 'Authorization error. Please log out and log back in.';
+        } else if (errorStr.contains('network')) {
+          errorMessage = 'Network error. Check your connection.';
+        } else if (errorStr.contains('size') || errorStr.contains('10mb')) {
+          errorMessage = 'File too large. Max size is 10MB.';
+        } else if (errorStr.contains('authenticated')) {
+          errorMessage = 'Session expired. Please log in again.';
+        } else {
+          errorMessage = 'Upload failed: ${e.toString()}';
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: ${e.toString()}'),
+            content: Text(errorMessage),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 6),
+            action: SnackBarAction(
+              label: 'Retry',
+              textColor: Colors.white,
+              onPressed: () => _pickImage(ImageSource.gallery),
+            ),
           ),
         );
       }
