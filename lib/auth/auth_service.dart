@@ -79,7 +79,7 @@ class AuthService extends ChangeNotifier {
       });
 
       // Send welcome email
-      await _emailService.sendWelcomeEmail(email, displayName);
+      await _emailService.sendWelcomeEmail(userCredential.user!.uid, email);
 
       notifyListeners();
       return null;
@@ -139,6 +139,9 @@ class AuthService extends ChangeNotifier {
               'preferences': {},
               'provider': 'google',
             });
+            
+            // Send welcome email
+            await _emailService.sendWelcomeEmail(userCredential.user!.uid, userCredential.user!.email!);
           }
 
           notifyListeners();
@@ -180,6 +183,9 @@ class AuthService extends ChangeNotifier {
           'preferences': {},
           'provider': 'apple',
         });
+        
+        // Send welcome email
+        await _emailService.sendWelcomeEmail(userCredential.user!.uid, userCredential.user!.email!);
       }
 
       notifyListeners();

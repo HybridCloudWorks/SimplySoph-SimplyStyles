@@ -15,6 +15,16 @@ class AddItemScreen extends StatefulWidget {
 class _AddItemScreenState extends State<AddItemScreen> {
   final ImagePicker _picker = ImagePicker();
   bool _isUploading = false;
+  String _selectedCategory = 'top';
+  
+  final List<String> _categories = [
+    'top',
+    'bottom',
+    'dress',
+    'outerwear',
+    'shoes',
+    'accessory',
+  ];
 
   Future<void> _pickImage(ImageSource source) async {
     try {
@@ -42,13 +52,13 @@ class _AddItemScreenState extends State<AddItemScreen> {
         await wardrobeService.addItemFromBytes(
           userId: userId,
           imageBytes: bytes,
-          category: 'top',
+          category: _selectedCategory,
         );
       } else {
         await wardrobeService.addItem(
           userId: userId,
           imagePath: image.path,
-          category: 'top',
+          category: _selectedCategory,
         );
       }
 
@@ -123,7 +133,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                   Text('Uploading item...'),
                   SizedBox(height: 8),
                   Text(
-                    'This may take a moment',
+                    'Analyzing image and uploading...',
                     style: TextStyle(color: Colors.grey, fontSize: 12),
                   ),
                 ],
@@ -144,7 +154,34 @@ class _AddItemScreenState extends State<AddItemScreen> {
                       'Max file size: 10MB',
                       style: TextStyle(color: Colors.grey[600], fontSize: 14),
                     ),
-                    const SizedBox(height: 48),
+                    const SizedBox(height: 32),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _selectedCategory,
+                          hint: const Text('Select Category'),
+                          isExpanded: true,
+                          items: _categories.map((category) {
+                            return DropdownMenuItem(
+                              value: category,
+                              child: Text(category.toUpperCase()),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            if (value != null) {
+                              setState(() => _selectedCategory = value);
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
                     if (!kIsWeb)
                       SizedBox(
                         width: double.infinity,
