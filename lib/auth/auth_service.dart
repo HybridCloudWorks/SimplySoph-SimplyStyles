@@ -6,14 +6,19 @@ import '../services/email_service.dart';
 class AuthService extends ChangeNotifier {
   late final FirebaseAuth _auth;
   late final FirebaseFirestore _firestore;
+  late final EmailService _emailService;
 
   User? get currentUser => _auth.currentUser;
 
-  final EmailService _emailService = EmailService();
-
-  AuthService({FirebaseAuth? auth, FirebaseFirestore? firestore}) {
+  AuthService({
+    FirebaseAuth? auth,
+    FirebaseFirestore? firestore,
+    EmailService? emailService,
+  }) {
     _auth = auth ?? FirebaseAuth.instance;
     _firestore = firestore ?? FirebaseFirestore.instance;
+    _emailService = emailService ?? EmailService(firestore: _firestore);
+
     _auth.authStateChanges().listen((User? user) {
       notifyListeners();
     });
