@@ -122,20 +122,22 @@ class _OutfitBuilderScreenState extends State<OutfitBuilderScreen> {
                   itemCount: items.length,
                   itemBuilder: (context, index) {
                     final item = items[index];
-                    return Container(
+                    return SizedBox(
                       width: 120,
-                      margin: const EdgeInsets.only(right: 8),
-                      child: Draggable<ClothingItem>(
-                        data: item,
-                        feedback: Material(
-                          child: Container(
-                            width: 100,
-                            height: 140,
-                            child: _buildMiniCard(item),
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: Draggable<ClothingItem>(
+                          data: item,
+                          feedback: Material(
+                            child: SizedBox(
+                              width: 100,
+                              height: 140,
+                              child: _buildMiniCard(item),
+                            ),
                           ),
+                          childWhenDragging: Opacity(opacity: 0.5, child: _buildMiniCard(item)),
+                          child: _buildMiniCard(item),
                         ),
-                        childWhenDragging: Opacity(opacity: 0.5, child: _buildMiniCard(item)),
-                        child: _buildMiniCard(item),
                       ),
                     );
                   },
@@ -150,7 +152,8 @@ class _OutfitBuilderScreenState extends State<OutfitBuilderScreen> {
 
   Widget _buildDropZone(String category, ClothingItem? item, IconData icon) {
     return DragTarget<ClothingItem>(
-      onAccept: (droppedItem) {
+      onAcceptWithDetails: (details) {
+        final droppedItem = details.data;
         setState(() {
           switch (category) {
             case 'top': _selectedTop = droppedItem; break;

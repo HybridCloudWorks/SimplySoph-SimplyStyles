@@ -17,6 +17,9 @@ class ClothingItem {
   final DateTime createdAt;
   final DateTime updatedAt;
 
+  // Getter for tags compatibility
+  List<String> get tags => styleTags;
+
   ClothingItem({
     required this.id,
     required this.userId,
