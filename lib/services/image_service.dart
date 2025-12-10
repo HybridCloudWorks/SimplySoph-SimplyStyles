@@ -3,7 +3,6 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
 import 'package:uuid/uuid.dart';
-import 'dart:typed_data';
 
 const int _maxFileSizeBytes = 10 * 1024 * 1024; // 10MB
 const int _thumbnailSize = 300;
