@@ -11,16 +11,20 @@ void setupFirebaseCoreMocks() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockDecodedMessageHandler(
       BasicMessageChannel(channelName, StandardMessageCodec()),
       (message) async {
-        return {
-          'name': '[DEFAULT]',
-          'options': {
-            'apiKey': '123',
-            'appId': '123',
-            'messagingSenderId': '123',
-            'projectId': '123',
-          },
-          'pluginConstants': {},
-        };
+        // Pigeon expects a List<Object?> as the return value for the method call.
+        // The first element is the result, usually.
+        return [
+          {
+            'name': '[DEFAULT]',
+            'options': {
+              'apiKey': '123',
+              'appId': '123',
+              'messagingSenderId': '123',
+              'projectId': '123',
+            },
+            'pluginConstants': {},
+          }
+        ];
       }
     );
 
