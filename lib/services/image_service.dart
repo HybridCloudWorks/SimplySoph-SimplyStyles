@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
@@ -14,73 +13,8 @@ class ImageService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final Uuid _uuid = const Uuid();
 
-  /// Upload clothing image and create thumbnail
+  /// Upload clothing image and create thumbnail from bytes
   Future<Map<String, String>> uploadClothingImage({
-    required String userId,
-    required String imagePath,
-  }) async {
-    if (userId.isEmpty) throw ArgumentError('userId cannot be empty');
-    if (imagePath.isEmpty) throw ArgumentError('imagePath cannot be empty');
-
-    // Check authentication and refresh token
-    final currentUser = _auth.currentUser;
-    if (currentUser == null) {
-      throw Exception('User must be authenticated to upload images');
-    }
-    if (currentUser.uid != userId) {
-      throw Exception('User can only upload to their own storage');
-    }
-
-    // Force token refresh to ensure valid authentication
-    await currentUser.getIdToken(true);
-
-    try {
-      final itemId = _uuid.v4();
-      Uint8List imageBytes;
-
-      // Platform-specific file reading
-      if (kIsWeb) {
-        // Web: imagePath is actually a blob URL or we need bytes directly
-        throw UnimplementedError('Web upload requires bytes, not file path');
-      } else {
-        final file = File(imagePath);
-        if (!await file.exists()) {
-          throw ArgumentError('File does not exist: $imagePath');
-        }
-        imageBytes = await file.readAsBytes();
-      }
-
-      // Validate file size
-      if (imageBytes.length > _maxFileSizeBytes) {
-        throw Exception('File size exceeds 10MB limit');
-      }
-
-      // Upload original with metadata
-      final originalRef = _storage.ref('users/$userId/wardrobe/original/$itemId.jpg');
-      final metadata = SettableMetadata(contentType: 'image/jpeg');
-      await originalRef.putData(imageBytes, metadata);
-      final originalUrl = await originalRef.getDownloadURL();
-
-      // Create and upload thumbnail
-      final thumbnailUrl = await _createAndUploadThumbnail(
-        imageBytes: imageBytes,
-        userId: userId,
-        itemId: itemId,
-      );
-
-      return {
-        'original': originalUrl,
-        'thumbnail': thumbnailUrl,
-        'itemId': itemId, // Return itemId for deletion
-      };
-    } catch (e) {
-      debugPrint('Error uploading image: $e');
-      rethrow;
-    }
-  }
-
-  /// Upload from bytes (web-compatible)
-  Future<Map<String, String>> uploadClothingImageBytes({
     required String userId,
     required Uint8List imageBytes,
   }) async {
@@ -167,16 +101,22 @@ class ImageService {
     }
   }
 
-  /// Upload profile picture
+  /// Upload profile picture from bytes
   Future<String> uploadProfilePicture({
     required String userId,
-    required String imagePath,
+    required Uint8List imageBytes,
   }) async {
     if (userId.isEmpty) throw ArgumentError('userId cannot be empty');
+    if (imageBytes.isEmpty) throw ArgumentError('imageBytes cannot be empty');
 
-    final file = File(imagePath);
+    // Validate file size
+    if (imageBytes.length > _maxFileSizeBytes) {
+      throw Exception('File size exceeds 10MB limit');
+    }
+
     final ref = _storage.ref('users/$userId/profile/avatar.jpg');
-    await ref.putFile(file);
+    final metadata = SettableMetadata(contentType: 'image/jpeg');
+    await ref.putData(imageBytes, metadata);
     return await ref.getDownloadURL();
   }
 
