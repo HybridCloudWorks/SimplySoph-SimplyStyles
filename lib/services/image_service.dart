@@ -3,6 +3,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
 import 'package:uuid/uuid.dart';
+import 'dart:typed_data';
 
 const int _maxFileSizeBytes = 10 * 1024 * 1024; // 10MB
 const int _thumbnailSize = 300;
@@ -13,7 +14,8 @@ class ImageService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final Uuid _uuid = const Uuid();
 
-  /// Upload clothing image and create thumbnail from bytes
+  /// Upload clothing image from bytes
+  /// Performs client-side resizing for immediate thumbnail availability.
   Future<Map<String, String>> uploadClothingImage({
     required String userId,
     required Uint8List imageBytes,
@@ -21,7 +23,7 @@ class ImageService {
     if (userId.isEmpty) throw ArgumentError('userId cannot be empty');
     if (imageBytes.isEmpty) throw ArgumentError('imageBytes cannot be empty');
 
-    // Check authentication and refresh token
+    // Check authentication
     final currentUser = _auth.currentUser;
     if (currentUser == null) {
       throw Exception('User must be authenticated to upload images');
@@ -30,7 +32,7 @@ class ImageService {
       throw Exception('User can only upload to their own storage');
     }
 
-    // Force token refresh to ensure valid authentication
+    // Force token refresh
     await currentUser.getIdToken(true);
 
     // Validate file size
@@ -44,10 +46,13 @@ class ImageService {
       // Upload original with metadata
       final originalRef = _storage.ref('users/$userId/wardrobe/original/$itemId.jpg');
       final metadata = SettableMetadata(contentType: 'image/jpeg');
+
       await originalRef.putData(imageBytes, metadata);
       final originalUrl = await originalRef.getDownloadURL();
 
-      // Create and upload thumbnail
+      // Create and upload thumbnail immediately (Client-side)
+      // This ensures we have a valid URL with token immediately, avoiding race conditions
+      // with server-side extensions.
       final thumbnailUrl = await _createAndUploadThumbnail(
         imageBytes: imageBytes,
         userId: userId,
@@ -97,7 +102,7 @@ class ImageService {
       await _storage.ref('users/$userId/wardrobe/thumbnails/${storageItemId}_thumb.jpg').delete();
     } catch (e) {
       debugPrint('Error deleting image: $e');
-      // Don't rethrow - image might not exist
+      // Don't rethrow - image might not exist or already be deleted
     }
   }
 
@@ -109,7 +114,6 @@ class ImageService {
     if (userId.isEmpty) throw ArgumentError('userId cannot be empty');
     if (imageBytes.isEmpty) throw ArgumentError('imageBytes cannot be empty');
 
-    // Validate file size
     if (imageBytes.length > _maxFileSizeBytes) {
       throw Exception('File size exceeds 10MB limit');
     }
