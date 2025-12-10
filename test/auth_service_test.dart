@@ -1,9 +1,17 @@
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simplystyles/auth/auth_service.dart';
+import './mock_firebase_setup.dart';
 
 void main() {
+  setupFirebaseCoreMocks();
+
+  setUpAll(() async {
+    await Firebase.initializeApp();
+  });
+
   group('AuthService', () {
     // Mocks
     late MockFirebaseAuth mockAuth;

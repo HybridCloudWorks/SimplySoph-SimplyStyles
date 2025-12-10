@@ -1,7 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class EmailService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  late final FirebaseFirestore _firestore;
+
+  EmailService({FirebaseFirestore? firestore}) {
+    _firestore = firestore ?? FirebaseFirestore.instance;
+  }
 
   Future<void> sendWelcomeEmail(String userId, String email) async {
     await _firestore.collection('mail').add({

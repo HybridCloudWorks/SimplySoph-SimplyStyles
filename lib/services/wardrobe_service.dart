@@ -17,17 +17,17 @@ class WardrobeService {
   })  : _firestoreService = firestoreService,
         _imageService = imageService;
 
-  /// Add a new clothing item with image upload
+  /// Add a new clothing item (Platform agnostic, uses bytes)
   Future<String> addItem({
     required String userId,
-    required String imagePath,
+    required Uint8List imageBytes,
     required String category,
     String? brand,
     double? msrp,
   }) async {
     // Validation
     if (userId.isEmpty) throw ArgumentError('userId cannot be empty');
-    if (imagePath.isEmpty) throw ArgumentError('imagePath cannot be empty');
+    if (imageBytes.isEmpty) throw ArgumentError('imageBytes cannot be empty');
     if (!_validCategories.contains(category)) {
       throw ArgumentError('Invalid category: $category. Must be one of $_validCategories');
     }
@@ -39,7 +39,7 @@ class WardrobeService {
       // Upload image
       final imageUrls = await _imageService.uploadClothingImage(
         userId: userId,
-        imagePath: imagePath,
+        imageBytes: imageBytes,
       );
       storageItemId = imageUrls['itemId'];
 
@@ -92,65 +92,6 @@ class WardrobeService {
     }
   }
 
-  /// Add item from bytes (web-compatible)
-  Future<String> addItemFromBytes({
-    required String userId,
-    required Uint8List imageBytes,
-    required String category,
-    String? brand,
-    double? msrp,
-  }) async {
-    // Validation
-    if (userId.isEmpty) throw ArgumentError('userId cannot be empty');
-    if (imageBytes.isEmpty) throw ArgumentError('imageBytes cannot be empty');
-    if (!_validCategories.contains(category)) {
-      throw ArgumentError('Invalid category: $category');
-    }
-
-    String? storageItemId;
-    String? docId;
-
-    try {
-      final imageUrls = await _imageService.uploadClothingImageBytes(
-        userId: userId,
-        imageBytes: imageBytes,
-      );
-      storageItemId = imageUrls['itemId'];
-
-      final item = ClothingItem(
-        id: '',
-        userId: userId,
-        imageUrl: imageUrls['original']!,
-        thumbnailUrl: imageUrls['thumbnail']!,
-        category: category,
-        color: '#000000',
-        colors: [],
-        brand: brand ?? '',
-        msrp: msrp ?? 0,
-        styleTag: 'casual',
-        styleTags: [],
-        personaIds: [],
-        scanMethod: 'upload',
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-
-      docId = await _firestoreService.addClothingItem(item);
-
-      await _firestoreService.updateClothingItem(docId, {
-        'storageItemId': storageItemId,
-      });
-
-      return docId;
-    } catch (e) {
-      if (storageItemId != null && docId == null) {
-        debugPrint('Rolling back image upload');
-        await _imageService.deleteClothingImage(userId, storageItemId);
-      }
-      rethrow;
-    }
-  }
-
   /// Get all wardrobe items for a user
   Stream<List<ClothingItem>> getItems(String userId) {
     if (userId.isEmpty) throw ArgumentError('userId cannot be empty');
@@ -196,6 +137,7 @@ class WardrobeService {
   }
 
   /// Get item count for user
+  /// Uses efficient aggregation query.
   Future<int> getItemCount(String userId) async {
     if (userId.isEmpty) throw ArgumentError('userId cannot be empty');
 

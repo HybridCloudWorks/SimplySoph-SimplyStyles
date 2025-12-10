@@ -1,10 +1,18 @@
 import 'dart:typed_data';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simplystyles/services/firestore_service.dart';
 import 'package:simplystyles/services/image_service.dart';
 import 'package:simplystyles/services/wardrobe_service.dart';
+import './mock_firebase_setup.dart';
 
 void main() {
+  setupFirebaseCoreMocks();
+
+  setUpAll(() async {
+    await Firebase.initializeApp();
+  });
+
   group('Closet Upload Integration Tests', () {
     late FirestoreService firestoreService;
     late ImageService imageService;
@@ -21,7 +29,7 @@ void main() {
 
     test('WardrobeService validates userId', () {
       expect(
-        () => wardrobeService.addItemFromBytes(
+        () => wardrobeService.addItem(
           userId: '',
           imageBytes: Uint8List(0),
           category: 'top',
@@ -32,7 +40,7 @@ void main() {
 
     test('WardrobeService validates empty imageBytes', () {
       expect(
-        () => wardrobeService.addItemFromBytes(
+        () => wardrobeService.addItem(
           userId: 'test-user-123',
           imageBytes: Uint8List(0),
           category: 'top',
@@ -43,7 +51,7 @@ void main() {
 
     test('WardrobeService validates category', () {
       expect(
-        () => wardrobeService.addItemFromBytes(
+        () => wardrobeService.addItem(
           userId: 'test-user-123',
           imageBytes: Uint8List.fromList([1, 2, 3]),
           category: 'invalid-category',
@@ -114,7 +122,7 @@ void main() {
       final imageService = ImageService();
       
       expect(
-        () => imageService.uploadClothingImageBytes(
+        () => imageService.uploadClothingImage(
           userId: '',
           imageBytes: Uint8List.fromList([1, 2, 3]),
         ),
@@ -126,7 +134,7 @@ void main() {
       final imageService = ImageService();
       
       expect(
-        () => imageService.uploadClothingImageBytes(
+        () => imageService.uploadClothingImage(
           userId: 'test-user',
           imageBytes: Uint8List(0),
         ),
