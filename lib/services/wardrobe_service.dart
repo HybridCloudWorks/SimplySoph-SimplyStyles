@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:typed_data';
 import '../models/clothing_item.dart';
 import 'firestore_service.dart';
 import 'image_service.dart';
@@ -137,6 +138,7 @@ class WardrobeService {
   }
 
   /// Get item count for user
+  /// Uses efficient aggregation query.
   Future<int> getItemCount(String userId) async {
     if (userId.isEmpty) throw ArgumentError('userId cannot be empty');
 
