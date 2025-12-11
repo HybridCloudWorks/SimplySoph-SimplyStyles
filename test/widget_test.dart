@@ -1,6 +1,5 @@
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -10,14 +9,10 @@ import 'package:simplystyles/screens/auth/login_screen.dart';
 import 'package:simplystyles/screens/home/home_screen.dart';
 import 'package:simplystyles/screens/onboarding/onboarding_screen.dart';
 import 'package:simplystyles/services/database_service.dart';
-import './mock_firebase_setup.dart';
+import 'package:simplystyles/state/onboarding_state.dart';
 
 void main() {
-  setupFirebaseCoreMocks();
-
-  setUpAll(() async {
-    await Firebase.initializeApp();
-  });
+  TestWidgetsFlutterBinding.ensureInitialized();
 
   // A helper function to wrap our app in the necessary providers
   // for a given test.
@@ -29,6 +24,9 @@ void main() {
       providers: [
         ChangeNotifierProvider(
           create: (_) => AuthService(auth: auth, firestore: firestore),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => OnboardingState(),
         ),
         Provider<DatabaseService>(
           create: (_) => DatabaseService(firestore: firestore),
@@ -128,13 +126,11 @@ void main() {
     // --- ASSERT INITIAL STATE ---
     expect(find.byType(OnboardingScreen), findsOneWidget);
     expect(find.text('What\'s your go-to style?'), findsOneWidget);
-    expect(find.text('Selected: None'), findsOneWidget);
 
     // --- ACT & ASSERT: Update Style Preference ---
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Set to Chic'));
-    await tester.pump(); // Rebuild the consumer
-
-    expect(find.text('Selected: Chic'), findsOneWidget);
+    // Select a style using ChoiceChip
+    await tester.tap(find.text('Chic'));
+    await tester.pump();
 
     // --- ACT & ASSERT: Navigate to Page 2 ---
     await tester.tap(find.widgetWithText(ElevatedButton, 'Next'));

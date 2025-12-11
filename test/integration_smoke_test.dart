@@ -1,6 +1,6 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 /// Integration smoke tests for critical user flows
 void main() {
@@ -26,7 +26,8 @@ void main() {
         'onboardingComplete': false,
       });
 
-      final userDoc = await firestore.collection('users').doc(mockUser.uid).get();
+      final userDoc =
+          await firestore.collection('users').doc(mockUser.uid).get();
       expect(userDoc.exists, isTrue);
       expect(userDoc.data()?['email'], equals('test@example.com'));
     });
@@ -48,12 +49,21 @@ void main() {
     });
 
     test('User completes onboarding', () async {
+      // Ensure user document exists before updating
+      final doc = await firestore.collection('users').doc(mockUser.uid).get();
+      if (!doc.exists) {
+        await firestore.collection('users').doc(mockUser.uid).set({
+          'email': mockUser.email,
+          'onboardingComplete': false,
+        });
+      }
       await firestore.collection('users').doc(mockUser.uid).update({
         'onboardingComplete': true,
         'stylePreferences': ['casual', 'sporty'],
       });
 
-      final userDoc = await firestore.collection('users').doc(mockUser.uid).get();
+      final userDoc =
+          await firestore.collection('users').doc(mockUser.uid).get();
       expect(userDoc.data()?['onboardingComplete'], isTrue);
     });
   });
@@ -99,8 +109,9 @@ void main() {
     test('Thumbnail generated (simulated)', () {
       // Resize Images extension would create thumbnail
       final originalPath = 'users/${mockUser.uid}/wardrobe/image.jpg';
-      final thumbnailPath = originalPath.replaceAll('/wardrobe/', '/thumbnails/');
-      
+      final thumbnailPath =
+          originalPath.replaceAll('/wardrobe/', '/thumbnails/');
+
       expect(thumbnailPath, contains('/thumbnails/'));
     });
   });
@@ -252,7 +263,10 @@ void main() {
 
   group('Smoke Test: Analytics', () {
     test('Counter incremented', () async {
-      await firestore.collection('_counters').doc('user_${mockUser.uid}_items').set({
+      await firestore
+          .collection('_counters')
+          .doc('user_${mockUser.uid}_items')
+          .set({
         'count': 5,
       });
 
@@ -280,7 +294,7 @@ void main() {
 
       final items = await firestore.collection('wardrobe_items').get();
       final data = items.docs.first.data();
-      
+
       expect(data.containsKey('userId'), isTrue);
       expect(data.containsKey('category'), isTrue);
       expect(data.containsKey('createdAt'), isTrue);
@@ -293,7 +307,7 @@ void main() {
       await firestore.collection('users').doc(mockUser.uid).set({
         'email': mockUser.email,
       });
-      
+
       await firestore.collection('wardrobe_items').add({
         'userId': mockUser.uid,
         'category': 'tops',
@@ -301,8 +315,9 @@ void main() {
 
       // Simulate deletion
       await firestore.collection('users').doc(mockUser.uid).delete();
-      
-      final userDoc = await firestore.collection('users').doc(mockUser.uid).get();
+
+      final userDoc =
+          await firestore.collection('users').doc(mockUser.uid).get();
       expect(userDoc.exists, isFalse);
     });
   });
