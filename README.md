@@ -15,10 +15,10 @@ As of now, the foundational structure of the application is in place, focusing o
 
 ### Core Architecture
 
-*   **Firebase Integration**: The project is fully integrated with Firebase for backend services.
-*   **Authentication**: User sign-up and login functionality are implemented using **Firebase Authentication**. A dedicated `AuthService` handles all authentication-related logic, providing a clean interface for the UI.
-*   **Database**: **Cloud Firestore** is used as the database. A `DatabaseService` is set up to manage all interactions with Firestore, such as fetching and updating user data.
-*   **State Management**: The app uses the `provider` package for state management, allowing for a clean separation of concerns between the UI and the application logic.
+- **Firebase Integration**: The project is fully integrated with Firebase for backend services.
+- **Authentication**: User sign-up and login functionality are implemented using **Firebase Authentication**. A dedicated `AuthService` handles all authentication-related logic, providing a clean interface for the UI.
+- **Database**: **Cloud Firestore** is used as the database. A `DatabaseService` is set up to manage all interactions with Firestore, such as fetching and updating user data.
+- **State Management**: The app uses the `provider` package for state management, allowing for a clean separation of concerns between the UI and the application logic.
 
 ### User Flow & Navigation
 
@@ -33,27 +33,43 @@ This routing is handled reactively by streaming user data from Firestore, ensuri
 ### Testing
 
 The project includes a suite of widget tests to guarantee the reliability of the core authentication and navigation flow. These tests use `firebase_auth_mocks` and `fake_cloud_firestore` to simulate Firebase services, ensuring that:
-*   Logged-out users see the `LoginScreen`.
-*   Logged-in and fully onboarded users see the `HomeScreen`.
-*   Logged-in users who have not completed the new user quiz are correctly shown the `OnboardingScreen`.
+
+- Logged-out users see the `LoginScreen`.
+- Logged-in and fully onboarded users see the `HomeScreen`.
+- Logged-in users who have not completed the new user quiz are correctly shown the `OnboardingScreen`.
 
 ## Technology Stack
 
-*   **Framework**: Flutter
-*   **Backend**: Firebase
-    *   Firebase Authentication
-    *   Cloud Firestore
-*   **State Management**: `provider`
-*   **Testing**: `flutter_test`, `firebase_auth_mocks`, `fake_cloud_firestore`
-*   **CI/CD**: GitHub Actions with automated testing, building, and Firebase deployment
+- **Framework**: Flutter
+- **Backend**: Firebase
+  - Firebase Authentication
+  - Cloud Firestore
+- **State Management**: `provider`
+- **Testing**: `flutter_test`, `firebase_auth_mocks`, `fake_cloud_firestore`
+- **CI/CD**: GitHub Actions with automated testing, building, and Firebase deployment
 
 ## Deployment
 
 The app is automatically deployed to Firebase Hosting on every push to the `main` branch.
 
 - **Live App**: https://simplysoph-66c78.web.app
-- **Setup Guide**: See [CI_CD_SETUP.md](CI_CD_SETUP.md)
-- **Deployment Checklist**: See [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md)
+- **Setup Guide**: See [docs/CI_CD.md](docs/CI_CD.md)
+- **Deployment Checklist**: See [docs/Deployment.md](docs/Deployment.md)
+
+## Documentation
+
+Full documentation is available in the `docs/` directory:
+
+- [**Setup Guide**](docs/Setup.md): Installation and environment setup
+- [**Architecture**](docs/Architecture.md): System design and data flow
+- [**CI/CD**](docs/CI_CD.md): Automated testing and deployment pipeline
+- [**Deployment**](docs/Deployment.md): Manual and automated deployment guides
+- [**Testing**](docs/Testing.md): Testing strategy and validation reports
+- [**Extensions**](docs/Extensions.md): Firebase extensions configuration
+- [**API Reference**](docs/API.md): Backend API documentation
+- [**Database Schema**](docs/Database.md): Firestore data models
+- [**Security**](docs/Security.md): Security rules and best practices
+- [**Roadmap**](docs/Roadmap.md): Future features and planning
 
 ### Quick Start for CI/CD
 

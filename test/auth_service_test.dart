@@ -1,16 +1,10 @@
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simplystyles/auth/auth_service.dart';
-import './mock_firebase_setup.dart';
 
 void main() {
-  setupFirebaseCoreMocks();
-
-  setUpAll(() async {
-    await Firebase.initializeApp();
-  });
+  TestWidgetsFlutterBinding.ensureInitialized();
 
   group('AuthService', () {
     // Mocks
@@ -27,7 +21,8 @@ void main() {
       authService = AuthService(auth: mockAuth, firestore: fakeFirestore);
     });
 
-    test('signUp should create a user and a corresponding firestore document', () async {
+    test('signUp should create a user and a corresponding firestore document',
+        () async {
       // Arrange
       const email = 'test@example.com';
       const password = 'password123';
@@ -45,7 +40,10 @@ void main() {
       expect(mockAuth.currentUser!.email, email);
       expect(mockAuth.currentUser!.displayName, displayName);
 
-      final userDoc = await fakeFirestore.collection('users').doc(mockAuth.currentUser!.uid).get();
+      final userDoc = await fakeFirestore
+          .collection('users')
+          .doc(mockAuth.currentUser!.uid)
+          .get();
       expect(userDoc.exists, isTrue);
       expect(userDoc.data()?['email'], email);
     });

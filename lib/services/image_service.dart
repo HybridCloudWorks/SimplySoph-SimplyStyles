@@ -9,8 +9,6 @@ const int _thumbnailSize = 300;
 const int _thumbnailQuality = 85;
 
 class ImageService {
-  final FirebaseStorage _storage = FirebaseStorage.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
   final Uuid _uuid = const Uuid();
 
   /// Upload clothing image from bytes
@@ -23,7 +21,7 @@ class ImageService {
     if (imageBytes.isEmpty) throw ArgumentError('imageBytes cannot be empty');
 
     // Check authentication
-    final currentUser = _auth.currentUser;
+    final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) {
       throw Exception('User must be authenticated to upload images');
     }
@@ -43,7 +41,8 @@ class ImageService {
       final itemId = _uuid.v4();
 
       // Upload original with metadata
-      final originalRef = _storage.ref('users/$userId/wardrobe/original/$itemId.jpg');
+      final originalRef = FirebaseStorage.instance
+          .ref('users/$userId/wardrobe/original/$itemId.jpg');
       final metadata = SettableMetadata(contentType: 'image/jpeg');
 
       await originalRef.putData(imageBytes, metadata);
@@ -86,7 +85,8 @@ class ImageService {
     );
     final thumbnailBytes = img.encodeJpg(thumbnail, quality: _thumbnailQuality);
 
-    final thumbnailRef = _storage.ref('users/$userId/wardrobe/thumbnails/${itemId}_thumb.jpg');
+    final thumbnailRef = FirebaseStorage.instance
+        .ref('users/$userId/wardrobe/thumbnails/${itemId}_thumb.jpg');
     final metadata = SettableMetadata(contentType: 'image/jpeg');
     await thumbnailRef.putData(Uint8List.fromList(thumbnailBytes), metadata);
     return await thumbnailRef.getDownloadURL();
@@ -97,8 +97,12 @@ class ImageService {
     if (userId.isEmpty || storageItemId.isEmpty) return;
 
     try {
-      await _storage.ref('users/$userId/wardrobe/original/$storageItemId.jpg').delete();
-      await _storage.ref('users/$userId/wardrobe/thumbnails/${storageItemId}_thumb.jpg').delete();
+      await FirebaseStorage.instance
+          .ref('users/$userId/wardrobe/original/$storageItemId.jpg')
+          .delete();
+      await FirebaseStorage.instance
+          .ref('users/$userId/wardrobe/thumbnails/${storageItemId}_thumb.jpg')
+          .delete();
     } catch (e) {
       debugPrint('Error deleting image: $e');
       // Don't rethrow - image might not exist or already be deleted
@@ -117,7 +121,8 @@ class ImageService {
       throw Exception('File size exceeds 10MB limit');
     }
 
-    final ref = _storage.ref('users/$userId/profile/avatar.jpg');
+    final ref =
+        FirebaseStorage.instance.ref('users/$userId/profile/avatar.jpg');
     final metadata = SettableMetadata(contentType: 'image/jpeg');
     await ref.putData(imageBytes, metadata);
     return await ref.getDownloadURL();
@@ -128,7 +133,9 @@ class ImageService {
     if (userId.isEmpty) return;
 
     try {
-      await _storage.ref('users/$userId/profile/avatar.jpg').delete();
+      await FirebaseStorage.instance
+          .ref('users/$userId/profile/avatar.jpg')
+          .delete();
     } catch (e) {
       debugPrint('Error deleting profile picture: $e');
     }

@@ -25,13 +25,15 @@ final result = await callable.call(parameters);
 **Method**: POST
 
 **Parameters**:
+
 ```typescript
 {
-  imageUrl: string;  // Firebase Storage URL or public URL
+  imageUrl: string; // Firebase Storage URL or public URL
 }
 ```
 
 **Response**:
+
 ```typescript
 {
   success: boolean;
@@ -51,6 +53,7 @@ final result = await callable.call(parameters);
 ```
 
 **Example**:
+
 ```dart
 final callable = functions.httpsCallable('vortex_analyzeItem');
 final result = await callable.call({
@@ -63,6 +66,7 @@ print('Color: ${data['color']}');
 ```
 
 **Error Codes**:
+
 - `invalid-argument` - Missing or invalid imageUrl
 - `unauthenticated` - User not authenticated
 - `internal` - AI analysis failed
@@ -78,6 +82,7 @@ print('Color: ${data['color']}');
 **Parameters**: None (uses authenticated user's data)
 
 **Response**:
+
 ```typescript
 {
   success: boolean;
@@ -103,6 +108,7 @@ print('Color: ${data['color']}');
 ```
 
 **Example**:
+
 ```dart
 final callable = functions.httpsCallable('vortex_generatePersonas');
 final result = await callable.call();
@@ -112,10 +118,12 @@ print('Generated ${personas.length} personas');
 ```
 
 **Requirements**:
+
 - User must have at least 15 wardrobe items
 - Items must have AI analysis completed
 
 **Error Codes**:
+
 - `failed-precondition` - Not enough items
 - `unauthenticated` - User not authenticated
 - `internal` - Persona generation failed
@@ -129,6 +137,7 @@ print('Generated ${personas.length} personas');
 **Method**: POST
 
 **Parameters**:
+
 ```typescript
 {
   itemAttributes: {
@@ -142,6 +151,7 @@ print('Generated ${personas.length} personas');
 ```
 
 **Response**:
+
 ```typescript
 {
   success: boolean;
@@ -160,6 +170,7 @@ print('Generated ${personas.length} personas');
 ```
 
 **Example**:
+
 ```dart
 final callable = functions.httpsCallable('vortex_calculateFit');
 final result = await callable.call({
@@ -177,6 +188,7 @@ print('Fit score: ${(fitScore * 100).toInt()}%');
 ```
 
 **Error Codes**:
+
 - `invalid-argument` - Missing required attributes
 - `failed-precondition` - User has no personas
 - `unauthenticated` - User not authenticated
@@ -190,6 +202,7 @@ print('Fit score: ${(fitScore * 100).toInt()}%');
 **Method**: POST
 
 **Parameters**:
+
 ```typescript
 {
   personaId?: string;        // Optional: specific persona
@@ -200,6 +213,7 @@ print('Fit score: ${(fitScore * 100).toInt()}%');
 ```
 
 **Response**:
+
 ```typescript
 {
   success: boolean;
@@ -228,6 +242,7 @@ print('Fit score: ${(fitScore * 100).toInt()}%');
 **Method**: POST
 
 **Parameters**:
+
 ```typescript
 {
   occasion?: string;         // 'work' | 'casual' | 'formal' | 'date'
@@ -237,6 +252,7 @@ print('Fit score: ${(fitScore * 100).toInt()}%');
 ```
 
 **Response**:
+
 ```typescript
 {
   success: boolean;
@@ -307,11 +323,13 @@ try {
 ## Rate Limits
 
 ### Current Limits (MVP)
+
 - **Analyze Item**: 100 calls/day per user
 - **Generate Personas**: 10 calls/day per user
 - **Calculate Fit**: 500 calls/day per user
 
 ### Future Limits (Production)
+
 - **Analyze Item**: 1000 calls/day per user
 - **Generate Personas**: 50 calls/day per user
 - **Calculate Fit**: Unlimited
@@ -319,10 +337,12 @@ try {
 ## Pricing
 
 ### Firebase Functions
+
 - **Free Tier**: 2M invocations/month
 - **Paid**: $0.40 per million invocations
 
 ### Gemini API
+
 - **Free Tier**: 60 requests/minute
 - **Paid**: $0.00025 per request
 
@@ -358,30 +378,36 @@ class MockGeminiAPI extends GeminiCortexAPI {
 ## Security
 
 ### Authentication
+
 - All functions require Firebase Authentication
 - User ID is automatically validated
 
 ### Authorization
+
 - Functions only access data owned by authenticated user
 - Admin functions require custom claims
 
 ### Input Validation
+
 - All inputs are validated server-side
 - Sanitized before processing
 
 ### Rate Limiting
+
 - Implemented via Firebase quotas
 - Per-user limits enforced
 
 ## Monitoring
 
 ### Metrics Tracked
+
 - Function invocations
 - Execution time
 - Error rate
 - Success rate
 
 ### Alerts
+
 - Error rate > 5%
 - Execution time > 10s
 - Daily quota exceeded
@@ -389,11 +415,13 @@ class MockGeminiAPI extends GeminiCortexAPI {
 ## Changelog
 
 ### Version 1.0 (Current)
+
 - `vortex_analyzeItem` - Initial implementation
 - `vortex_generatePersonas` - Initial implementation
 - `vortex_calculateFit` - Initial implementation
 
 ### Version 1.1 (Planned)
+
 - `vortex_getRecommendations` - New function
 - `vortex_generateOutfit` - New function
 - Rate limiting improvements

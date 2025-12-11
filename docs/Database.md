@@ -13,6 +13,7 @@ SimplyStyles uses **Cloud Firestore** as its primary database. This document def
 **Document ID**: Firebase Auth UID
 
 **Structure**:
+
 ```typescript
 {
   email: string;
@@ -44,6 +45,7 @@ SimplyStyles uses **Cloud Firestore** as its primary database. This document def
 ```
 
 **Example**:
+
 ```json
 {
   "email": "user@example.com",
@@ -70,10 +72,12 @@ SimplyStyles uses **Cloud Firestore** as its primary database. This document def
 ```
 
 **Indexes**:
+
 - `email` (for lookups)
 - `createdAt` (for analytics)
 
 **Security Rules**:
+
 ```javascript
 match /users/{userId} {
   allow read, write: if request.auth.uid == userId;
@@ -89,6 +93,7 @@ match /users/{userId} {
 **Document ID**: Auto-generated
 
 **Structure**:
+
 ```typescript
 {
   userId: string;              // Reference to users collection
@@ -114,6 +119,7 @@ match /users/{userId} {
 ```
 
 **Example**:
+
 ```json
 {
   "userId": "user123",
@@ -139,11 +145,13 @@ match /users/{userId} {
 ```
 
 **Indexes**:
+
 - `userId` + `createdAt` (for user's wardrobe)
 - `userId` + `category` (for filtering)
 - `userId` + `styleTag` (for persona matching)
 
 **Security Rules**:
+
 ```javascript
 match /wardrobe_items/{itemId} {
   allow read, write: if request.auth.uid == resource.data.userId;
@@ -160,6 +168,7 @@ match /wardrobe_items/{itemId} {
 **Document ID**: Auto-generated
 
 **Structure**:
+
 ```typescript
 {
   userId: string;
@@ -186,6 +195,7 @@ match /wardrobe_items/{itemId} {
 ```
 
 **Example**:
+
 ```json
 {
   "userId": "user123",
@@ -212,10 +222,12 @@ match /wardrobe_items/{itemId} {
 ```
 
 **Indexes**:
+
 - `userId` + `isPrimary` (for primary persona)
 - `userId` + `createdAt` (for listing)
 
 **Security Rules**:
+
 ```javascript
 match /style_personas/{personaId} {
   allow read, write: if request.auth.uid == resource.data.userId;
@@ -232,6 +244,7 @@ match /style_personas/{personaId} {
 **Document ID**: Auto-generated
 
 **Structure**:
+
 ```typescript
 {
   userId: string;
@@ -254,6 +267,7 @@ match /style_personas/{personaId} {
 ```
 
 **Example**:
+
 ```json
 {
   "userId": "user123",
@@ -276,10 +290,12 @@ match /style_personas/{personaId} {
 ```
 
 **Indexes**:
+
 - `userId` + `status` + `createdAt` (for active recommendations)
 - `userId` + `expiresAt` (for cleanup)
 
 **Security Rules**:
+
 ```javascript
 match /recommendations/{recommendationId} {
   allow read: if request.auth.uid == resource.data.userId;
@@ -296,6 +312,7 @@ match /recommendations/{recommendationId} {
 **Document ID**: Auto-generated
 
 **Structure**:
+
 ```typescript
 {
   name: string;
@@ -317,6 +334,7 @@ match /recommendations/{recommendationId} {
 ```
 
 **Example**:
+
 ```json
 {
   "name": "Y2K Revival",
@@ -338,10 +356,12 @@ match /recommendations/{recommendationId} {
 ```
 
 **Indexes**:
+
 - `isActive` + `popularity` (for trending feed)
 - `category` + `popularity` (for filtered trends)
 
 **Security Rules**:
+
 ```javascript
 match /trends/{trendId} {
   allow read: if request.auth != null;
@@ -358,6 +378,7 @@ match /trends/{trendId} {
 **Document ID**: Auto-generated
 
 **Structure**:
+
 ```typescript
 {
   userId: string;
@@ -397,6 +418,7 @@ recommendations (N) ───> (1) wardrobe_items (optional)
 ## Query Patterns
 
 ### Get User's Wardrobe
+
 ```dart
 firestore
   .collection('wardrobe_items')
@@ -406,6 +428,7 @@ firestore
 ```
 
 ### Get User's Primary Persona
+
 ```dart
 firestore
   .collection('style_personas')
@@ -415,6 +438,7 @@ firestore
 ```
 
 ### Get Active Recommendations
+
 ```dart
 firestore
   .collection('recommendations')
@@ -425,6 +449,7 @@ firestore
 ```
 
 ### Get Trending Items
+
 ```dart
 firestore
   .collection('trends')
@@ -436,10 +461,12 @@ firestore
 ## Data Migration Strategy
 
 ### Version 1.0 → 1.1
+
 - Add `stats` field to users
 - Backfill existing users with default stats
 
 ### Version 1.1 → 2.0
+
 - Add `outfits` collection
 - Migrate persona data structure
 
