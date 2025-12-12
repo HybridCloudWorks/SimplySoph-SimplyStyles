@@ -14,6 +14,8 @@ class FirestoreService {
         _emailService = emailService ??
             EmailService(firestore: firestore ?? FirebaseFirestore.instance);
 
+  FirebaseFirestore get firestore => _firestore;
+
   // Wardrobe Items
   Future<String> addClothingItem(ClothingItem item) async {
     final docRef =

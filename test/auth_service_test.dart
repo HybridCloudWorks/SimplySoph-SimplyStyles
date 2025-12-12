@@ -25,7 +25,7 @@ void main() {
         () async {
       // Arrange
       const email = 'test@example.com';
-      const password = 'password123';
+      const password = '123456';
       const displayName = 'Test User';
 
       // Act
@@ -51,7 +51,7 @@ void main() {
     test('signIn should log in an existing user', () async {
       // --- ARRANGE ---
       const email = 'test@example.com';
-      const password = 'password123';
+      const password = '123456';
 
       // Manually create the user in the FAKE auth system first
       await mockAuth.createUserWithEmailAndPassword(
@@ -77,7 +77,7 @@ void main() {
       // Start in a "logged-in" state.
       await mockAuth.signInWithEmailAndPassword(
         email: 'test@example.com',
-        password: 'password123',
+        password: '123456',
       );
       expect(mockAuth.currentUser, isNotNull);
 

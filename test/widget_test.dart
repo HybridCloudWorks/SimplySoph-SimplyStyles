@@ -9,6 +9,9 @@ import 'package:simplystyles/screens/auth/login_screen.dart';
 import 'package:simplystyles/screens/home/home_screen.dart';
 import 'package:simplystyles/screens/onboarding/onboarding_screen.dart';
 import 'package:simplystyles/services/database_service.dart';
+import 'package:simplystyles/services/firestore_service.dart';
+import 'package:simplystyles/services/image_service.dart';
+import 'package:simplystyles/services/wardrobe_service.dart';
 import 'package:simplystyles/state/onboarding_state.dart';
 
 void main() {
@@ -30,6 +33,18 @@ void main() {
         ),
         Provider<DatabaseService>(
           create: (_) => DatabaseService(firestore: firestore),
+        ),
+        Provider<FirestoreService>(
+          create: (_) => FirestoreService(),
+        ),
+        Provider<ImageService>(
+          create: (_) => ImageService(),
+        ),
+        ProxyProvider2<FirestoreService, ImageService, WardrobeService>(
+          update: (_, firestoreService, imageService, __) => WardrobeService(
+            firestoreService: firestoreService,
+            imageService: imageService,
+          ),
         ),
       ],
       child: const SimplyStylesApp(),
@@ -72,6 +87,9 @@ void main() {
       firestore: fakeFirestore,
     ));
     await tester.pumpAndSettle();
+
+    // Wait a bit more for async operations to complete
+    await tester.pump(const Duration(milliseconds: 100));
 
     // --- ASSERT ---
     expect(find.byType(LoginScreen), findsNothing);

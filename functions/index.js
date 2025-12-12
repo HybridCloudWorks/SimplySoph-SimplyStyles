@@ -3,8 +3,14 @@ const {onSchedule} = require('firebase-functions/v2/scheduler');
 const {onObjectFinalized} = require('firebase-functions/v2/storage');
 const admin = require('firebase-admin');
 const {VertexAI} = require('@google-cloud/vertexai');
+const vision = require('@google-cloud/vision');
+const axios = require('axios');
+const googleTrends = require('google-trends-api');
 
 admin.initializeApp();
+
+// Initialize Vision Client
+const visionClient = new vision.ImageAnnotatorClient();
 
 const vertexAI = new VertexAI({
   project: 'simplysoph-66c78',
@@ -74,7 +80,7 @@ exports.vortex_generatePersonas = onCall({region: 'us-central1'}, async (request
   }
 
   const itemsSummary = wardrobeItems.slice(0, 10)
-    .map(item => `${item.category}: ${item.color} ${item.style}`)
+    .map(item => `${item.category}: ${item.color} ${item.styleTag || 'casual'}`)
     .join(', ');
 
   const prompt = `Based on this wardrobe: ${itemsSummary}
@@ -100,8 +106,10 @@ Return ONLY valid JSON array, no markdown.`;
 
   existingPersonas.docs.forEach(doc => batch.delete(doc.ref));
 
+  const personaRefs = [];
   personas.forEach(persona => {
     const personaRef = admin.firestore().collection('style_personas').doc();
+    personaRefs.push(personaRef);
     batch.set(personaRef, {
       userId,
       ...persona,
@@ -109,6 +117,49 @@ Return ONLY valid JSON array, no markdown.`;
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
   });
+
+  // Link items to personas based on matching criteria
+  for (const item of wardrobeItems) {
+    const matchingPersonas = [];
+    
+    for (let i = 0; i < personas.length; i++) {
+      const persona = personas[i];
+      let matchScore = 0;
+      
+      // Check if item category matches key pieces
+      if (persona.keyPieces.some(piece => 
+        piece.toLowerCase().includes(item.category.toLowerCase()) ||
+        item.category.toLowerCase().includes(piece.toLowerCase())
+      )) {
+        matchScore += 30;
+      }
+      
+      // Check color matching
+      if (persona.colorPalette.some(color => 
+        item.color?.toLowerCase().includes(color.toLowerCase()) ||
+        item.colors?.some(itemColor => itemColor.toLowerCase().includes(color.toLowerCase()))
+      )) {
+        matchScore += 20;
+      }
+      
+      // Check style matching
+      if (item.styleTag && persona.name.toLowerCase().includes(item.styleTag.toLowerCase())) {
+        matchScore += 25;
+      }
+      
+      // If match score is high enough, link the persona
+      if (matchScore >= 30) {
+        matchingPersonas.push(personaRefs[i].id);
+      }
+    }
+    
+    if (matchingPersonas.length > 0) {
+      batch.update(admin.firestore().collection('wardrobe_items').doc(item.id), {
+        personaIds: matchingPersonas,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    }
+  }
 
   await batch.commit();
   return {success: true, personaCount: personas.length};
@@ -247,4 +298,174 @@ Return ONLY valid JSON.`;
   }
 
   return null;
+});
+
+// --- NEW INTEGRATIONS ---
+
+// 1. Google Vision AI Integration
+exports.scanItemWithVision = onCall({region: 'us-central1'}, async (request) => {
+  if (!request.auth) {
+    throw new Error('User must be authenticated');
+  }
+
+  const { imageUrl } = request.data;
+  if (!imageUrl) {
+    throw new Error('Image URL is required');
+  }
+
+  try {
+    // Perform label detection and logo detection
+    const [result] = await visionClient.annotateImage({
+      image: { source: { imageUri: imageUrl } },
+      features: [
+        { type: 'LABEL_DETECTION' },
+        { type: 'LOGO_DETECTION' },
+        { type: 'IMAGE_PROPERTIES' },
+        { type: 'OBJECT_LOCALIZATION' }
+      ],
+    });
+
+    const labels = result.labelAnnotations.map(label => label.description);
+    const logos = result.logoAnnotations.map(logo => logo.description);
+    const colors = result.imagePropertiesAnnotation.dominantColors.colors
+      .sort((a, b) => b.pixelFraction - a.pixelFraction)
+      .slice(0, 3)
+      .map(c => `rgb(${c.color.red}, ${c.color.green}, ${c.color.blue})`);
+
+    return {
+      success: true,
+      data: {
+        labels,
+        logos,
+        dominantColors: colors,
+        fullResponse: result // Optional: return full response for debugging
+      }
+    };
+  } catch (error) {
+    console.error('Google Vision API Error:', error);
+    throw new Error('Failed to analyze image with Google Vision');
+  }
+});
+
+// 2. PyTrends Integration (via google-trends-api for Node.js)
+exports.getFashionTrends = onCall({region: 'us-central1'}, async (request) => {
+  if (!request.auth) {
+    throw new Error('User must be authenticated');
+  }
+
+  const { keyword = 'fashion trends', geo = 'US' } = request.data;
+
+  try {
+    const results = await googleTrends.interestOverTime({
+      keyword: keyword,
+      geo: geo,
+      startTime: new Date(Date.now() - (30 * 24 * 60 * 60 * 1000)), // Last 30 days
+    });
+
+    const parsedResults = JSON.parse(results);
+    
+    // Also get related queries
+    const related = await googleTrends.relatedQueries({
+      keyword: keyword,
+      geo: geo,
+    });
+    const parsedRelated = JSON.parse(related);
+
+    return {
+      success: true,
+      data: {
+        interestOverTime: parsedResults.default.timelineData,
+        relatedQueries: parsedRelated.default.rankedList
+      }
+    };
+  } catch (error) {
+    console.error('Google Trends API Error:', error);
+    throw new Error('Failed to fetch trends data');
+  }
+});
+
+// 3. Shein API Integration (RapidAPI)
+exports.searchShein = onCall({region: 'us-central1'}, async (request) => {
+  if (!request.auth) {
+    throw new Error('User must be authenticated');
+  }
+
+  const { query, limit = 20 } = request.data;
+  const rapidApiKey = process.env.RAPIDAPI_KEY; // Ensure this is set in Firebase config
+
+  if (!rapidApiKey) {
+    console.warn('RAPIDAPI_KEY not set');
+    // For development/demo purposes, return mock data or throw
+    // throw new Error('API Key configuration missing');
+  }
+
+  try {
+    const options = {
+      method: 'GET',
+      url: 'https://shein-business-api.p.rapidapi.com/search', // Verify endpoint
+      params: {
+        keywords: query,
+        limit: limit,
+        country: 'US',
+        language: 'en'
+      },
+      headers: {
+        'x-rapidapi-key': rapidApiKey,
+        'x-rapidapi-host': 'shein-business-api.p.rapidapi.com'
+      }
+    };
+
+    const response = await axios.request(options);
+    return {
+      success: true,
+      data: response.data
+    };
+  } catch (error) {
+    console.error('Shein API Error:', error);
+    // Return a graceful error or mock data if API fails
+    return {
+      success: false,
+      error: error.message,
+      details: error.response ? error.response.data : null
+    };
+  }
+});
+
+// 4. Zappos API Integration (RapidAPI)
+exports.searchZappos = onCall({region: 'us-central1'}, async (request) => {
+  if (!request.auth) {
+    throw new Error('User must be authenticated');
+  }
+
+  const { query, limit = 20 } = request.data;
+  const rapidApiKey = process.env.RAPIDAPI_KEY;
+
+  try {
+    const options = {
+      method: 'GET',
+      url: 'https://zappos1.p.rapidapi.com/search', // Verify endpoint
+      params: {
+        query: query,
+        limit: limit,
+        country: 'US'
+      },
+      headers: {
+        'x-rapidapi-key': rapidApiKey,
+        'x-rapidapi-host': 'zappos1.p.rapidapi.com'
+      }
+    };
+
+    const response = await axios.request(options);
+    return {
+      success: true,
+      data: response.data
+    };
+  } catch (error) {
+    console.error('Zappos API Error:', error);
+    return {
+      success: false,
+      error: error.message,
+      details: error.response ? error.response.data : null
+    };
+  }
 });

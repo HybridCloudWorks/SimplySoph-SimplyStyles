@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../auth/auth_service.dart';
 import '../../utils/web_view_detector_stub.dart'
@@ -19,7 +20,36 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _rememberMe = true; // Default to remembering users
   String? _googleErrorCode;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRememberMePreference();
+  }
+
+  Future<void> _loadRememberMePreference() async {
+    if (kIsWeb) return; // SharedPreferences doesn't work well on web
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      setState(() {
+        _rememberMe = prefs.getBool('remember_me') ?? true;
+      });
+    } catch (e) {
+      debugPrint('Error loading remember me preference: $e');
+    }
+  }
+
+  Future<void> _saveRememberMePreference(bool value) async {
+    if (kIsWeb) return; // SharedPreferences doesn't work well on web
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('remember_me', value);
+    } catch (e) {
+      debugPrint('Error saving remember me preference: $e');
+    }
+  }
 
   @override
   void dispose() {
@@ -34,6 +64,8 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     final authService = Provider.of<AuthService>(context, listen: false);
+
+    // Persistence is automatically configured in AuthService
     final error = await authService.signIn(
       email: _emailController.text.trim(),
       password: _passwordController.text,
@@ -202,6 +234,27 @@ class _LoginScreenState extends State<LoginScreen> {
                       }
                       return null;
                     },
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Remember Me Checkbox
+                  Row(
+                    children: [
+                      Checkbox(
+                        value: _rememberMe,
+                        onChanged: (value) {
+                          final newValue = value ?? true;
+                          setState(() => _rememberMe = newValue);
+                          _saveRememberMePreference(newValue);
+                        },
+                      ),
+                      const Expanded(
+                        child: Text(
+                          'Remember me on this device',
+                          style: TextStyle(fontSize: 14),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 24),
 

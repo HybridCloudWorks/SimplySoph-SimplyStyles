@@ -1,10 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-class RecommendationsScreen extends StatelessWidget {
+import '../../auth/auth_service.dart';
+import '../../models/style_persona.dart';
+import '../../services/persona_service.dart';
+import '../../services/recommendation_service.dart';
+
+class RecommendationsScreen extends StatefulWidget {
   const RecommendationsScreen({super.key});
 
   @override
+  State<RecommendationsScreen> createState() => _RecommendationsScreenState();
+}
+
+class _RecommendationsScreenState extends State<RecommendationsScreen> {
+  final RecommendationService _recommendationService = RecommendationService();
+  final PersonaService _personaService = PersonaService();
+
+  @override
   Widget build(BuildContext context) {
+    final authService = context.watch<AuthService>();
+    final userId = authService.currentUser?.uid;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Shop'),
@@ -23,8 +40,8 @@ class RecommendationsScreen extends StatelessWidget {
             Expanded(
               child: TabBarView(
                 children: [
-                  _buildForYouTab(),
-                  _buildByPersonaTab(),
+                  _buildForYouTab(userId),
+                  _buildByPersonaTab(userId),
                   _buildTrendingTab(),
                 ],
               ),
@@ -35,90 +52,195 @@ class RecommendationsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildForYouTab() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.shopping_bag_outlined,
-            size: 80,
-            color: Colors.grey[400],
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'No recommendations yet',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Add items to your closet to get personalized recommendations',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey[600]),
-          ),
-        ],
-      ),
+  Widget _buildForYouTab(String? userId) {
+    if (userId == null) {
+      return const Center(child: Text('Please log in to see recommendations'));
+    }
+
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _recommendationService.getPersonalizedRecommendations(userId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
+
+        final recommendations = snapshot.data ?? [];
+
+        if (recommendations.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.shopping_bag_outlined,
+                  size: 80,
+                  color: Colors.grey[400],
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'No recommendations yet',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Add items to your closet to get personalized recommendations',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: recommendations.length,
+          itemBuilder: (context, index) {
+            final item = recommendations[index];
+            return RecommendationCard(
+              name: item['name'] as String,
+              brand: item['brand'] as String,
+              price: item['price'] as double,
+              matchScore: item['matchScore'] as int,
+              description: item['description'] as String? ?? '',
+            );
+          },
+        );
+      },
     );
   }
 
-  Widget _buildByPersonaTab() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.person_outline,
-            size: 80,
-            color: Colors.grey[400],
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'No personas created yet',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Build your wardrobe to discover your style personas',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey[600]),
-          ),
-        ],
-      ),
+  Widget _buildByPersonaTab(String? userId) {
+    if (userId == null) {
+      return const Center(
+          child: Text('Please log in to see persona recommendations'));
+    }
+
+    return StreamBuilder<List<StylePersona>>(
+      stream: _personaService.getPersonas(userId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
+
+        final personas = snapshot.data ?? [];
+
+        if (personas.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.person_outline,
+                  size: 80,
+                  color: Colors.grey[400],
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'No personas created yet',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Build your wardrobe to discover your style personas',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: personas.length,
+          itemBuilder: (context, index) {
+            final persona = personas[index];
+            return Card(
+              margin: const EdgeInsets.only(bottom: 16),
+              child: ExpansionTile(
+                title: Text(
+                  persona.name,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle: Text(persona.description),
+                children: [
+                  FutureBuilder<List<Map<String, dynamic>>>(
+                    future: _recommendationService.getRecommendationsByPersona(
+                        userId, persona.id),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+
+                      if (snapshot.hasError || snapshot.data == null) {
+                        return const Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Text('Unable to load recommendations'),
+                        );
+                      }
+
+                      final recommendations = snapshot.data!;
+                      return Column(
+                        children: recommendations.map((item) {
+                          return RecommendationCard(
+                            name: item['name'] as String,
+                            brand: item['brand'] as String,
+                            price: item['price'] as double,
+                            matchScore: item['matchScore'] as int,
+                            description: item['description'] as String? ?? '',
+                          );
+                        }).toList(),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
   Widget _buildTrendingTab() {
-    final trendingItems = [
-      {
-        'name': 'Coastal Comfort Hoodie',
-        'brand': 'Aviator Nation',
-        'price': 158.0,
-        'matchScore': 92,
-      },
-      {
-        'name': 'Preppy Matching Set',
-        'brand': 'Roller Rabbit',
-        'price': 124.0,
-        'matchScore': 88,
-      },
-      {
-        'name': 'Luxury Lounge Pants',
-        'brand': 'Pink Palm Puff',
-        'price': 98.0,
-        'matchScore': 85,
-      },
-    ];
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _recommendationService.getTrendingRecommendations(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: trendingItems.length,
-      itemBuilder: (context, index) {
-        final item = trendingItems[index];
-        return RecommendationCard(
-          name: item['name'] as String,
-          brand: item['brand'] as String,
-          price: item['price'] as double,
-          matchScore: item['matchScore'] as int,
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
+
+        final recommendations = snapshot.data ?? [];
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: recommendations.length,
+          itemBuilder: (context, index) {
+            final item = recommendations[index];
+            return RecommendationCard(
+              name: item['name'] as String,
+              brand: item['brand'] as String,
+              price: item['price'] as double,
+              matchScore: item['matchScore'] as int,
+              description: item['description'] as String? ?? '',
+            );
+          },
         );
       },
     );
@@ -130,6 +252,7 @@ class RecommendationCard extends StatelessWidget {
   final String brand;
   final double price;
   final int matchScore;
+  final String description;
 
   const RecommendationCard({
     super.key,
@@ -137,6 +260,7 @@ class RecommendationCard extends StatelessWidget {
     required this.brand,
     required this.price,
     required this.matchScore,
+    this.description = '',
   });
 
   @override
@@ -186,6 +310,18 @@ class RecommendationCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    if (description.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        description,
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 12,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                     const SizedBox(height: 8),
                     Text(
                       '\$${price.toStringAsFixed(2)}',
