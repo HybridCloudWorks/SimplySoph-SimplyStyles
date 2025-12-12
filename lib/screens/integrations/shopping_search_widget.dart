@@ -39,21 +39,9 @@ class _ShoppingSearchWidgetState extends State<ShoppingSearchWidget> {
         futures.add(_functionsService.searchZappos(_searchController.text));
       }
 
-      final results = await Future.wait(futures);
-
       final products = <ProductResult>[];
 
-      // Process Shein results
-      if (_selectedSource == 'All' || _selectedSource == 'Shein') {
-        final sheinData =
-            results[0]; // Assuming order is preserved or handled by index
-        // If All, Shein is index 0. If Shein only, index 0.
-        // Wait, if All, index 0 is Shein, 1 is Zappos.
-        // If Zappos only, index 0 is Zappos.
-        // Let's handle this better.
-      }
-
-      // Re-implementing logic to be safer
+      // Process results safely
       if (_selectedSource == 'All' || _selectedSource == 'Shein') {
         try {
           final sheinRaw =
@@ -61,7 +49,7 @@ class _ShoppingSearchWidgetState extends State<ShoppingSearchWidget> {
           products
               .addAll(sheinRaw.map((json) => ProductResult.fromShein(json)));
         } catch (e) {
-          print('Shein error: $e');
+          // Silently handle Shein search errors
         }
       }
 
@@ -72,7 +60,7 @@ class _ShoppingSearchWidgetState extends State<ShoppingSearchWidget> {
           products
               .addAll(zapposRaw.map((json) => ProductResult.fromZappos(json)));
         } catch (e) {
-          print('Zappos error: $e');
+          // Silently handle Zappos search errors
         }
       }
 
