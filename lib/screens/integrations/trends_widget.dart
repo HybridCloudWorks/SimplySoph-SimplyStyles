@@ -131,7 +131,7 @@ class _TrendsWidgetState extends State<TrendsWidget> {
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 1),
               height: (val / 100) * 200, // Normalize to height
-              color: Theme.of(context).primaryColor.withOpacity(0.7),
+              color: Theme.of(context).primaryColor.withValues(alpha: 0.7),
             ),
           ),
         );

@@ -12,7 +12,6 @@ class CloudFunctionsService {
       });
       return Map<String, dynamic>.from(result.data['data']);
     } catch (e) {
-      print('Error calling scanItemWithVision: $e');
       rethrow;
     }
   }
@@ -27,7 +26,6 @@ class CloudFunctionsService {
       });
       return Map<String, dynamic>.from(result.data['data']);
     } catch (e) {
-      print('Error calling getFashionTrends: $e');
       rethrow;
     }
   }
@@ -50,7 +48,6 @@ class CloudFunctionsService {
       }
       return [];
     } catch (e) {
-      print('Error calling searchShein: $e');
       rethrow;
     }
   }
@@ -70,7 +67,6 @@ class CloudFunctionsService {
       }
       return [];
     } catch (e) {
-      print('Error calling searchZappos: $e');
       rethrow;
     }
   }
