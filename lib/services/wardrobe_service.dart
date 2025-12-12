@@ -1,21 +1,33 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+
 import '../models/clothing_item.dart';
+import 'email_service.dart';
 import 'firestore_service.dart';
 import 'image_service.dart';
-import 'email_service.dart';
+import 'persona_service.dart';
 
-const List<String> _validCategories = ['top', 'bottom', 'dress', 'shoes', 'accessory'];
+const List<String> _validCategories = [
+  'top',
+  'bottom',
+  'dress',
+  'shoes',
+  'accessory'
+];
 
 class WardrobeService {
   final FirestoreService _firestoreService;
   final ImageService _imageService;
+  late final PersonaService _personaService;
 
   WardrobeService({
     required FirestoreService firestoreService,
     required ImageService imageService,
   })  : _firestoreService = firestoreService,
-        _imageService = imageService;
+        _imageService = imageService {
+    // Initialize persona service with the same firestore instance
+    _personaService = PersonaService(firestoreService.firestore);
+  }
 
   /// Add a new clothing item (Platform agnostic, uses bytes)
   Future<String> addItem({
@@ -29,7 +41,8 @@ class WardrobeService {
     if (userId.isEmpty) throw ArgumentError('userId cannot be empty');
     if (imageBytes.isEmpty) throw ArgumentError('imageBytes cannot be empty');
     if (!_validCategories.contains(category)) {
-      throw ArgumentError('Invalid category: $category. Must be one of $_validCategories');
+      throw ArgumentError(
+          'Invalid category: $category. Must be one of $_validCategories');
     }
 
     String? storageItemId;
@@ -74,10 +87,25 @@ class WardrobeService {
       final itemCount = await getItemCount(userId);
       if (itemCount == 1) {
         final emailService = EmailService();
-        final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .get();
         final email = userDoc.data()?['email'] as String?;
         if (email != null) {
           await emailService.sendFirstItemEmail(userId, email);
+        }
+      }
+
+      // Check if we should generate personas (need 5+ items and no existing personas)
+      final personaCount = await _personaService.getPersonaCount(userId);
+      if (itemCount >= 5 && personaCount == 0) {
+        try {
+          await _personaService.generatePersonas(userId);
+          debugPrint('Style personas generated for user $userId');
+        } catch (e) {
+          debugPrint('Failed to generate personas: $e');
+          // Don't fail the item addition if persona generation fails
         }
       }
 

@@ -140,4 +140,26 @@ class ImageService {
       debugPrint('Error deleting profile picture: $e');
     }
   }
+
+  /// Get a fresh download URL for an image (handles token refresh automatically)
+  Future<String?> getFreshDownloadUrl(String userId, String imagePath) async {
+    try {
+      // Check authentication
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        debugPrint('User not authenticated, cannot get download URL');
+        return null;
+      }
+
+      // Force token refresh to ensure valid download URLs
+      await currentUser.getIdToken(true);
+
+      final ref = FirebaseStorage.instance.ref('users/$userId/$imagePath');
+      final url = await ref.getDownloadURL();
+      return url;
+    } catch (e) {
+      debugPrint('Error getting download URL for $imagePath: $e');
+      return null;
+    }
+  }
 }

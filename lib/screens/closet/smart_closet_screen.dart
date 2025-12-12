@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../auth/auth_service.dart';
 import '../../models/clothing_item.dart';
+import '../../services/image_service.dart';
 import '../../services/wardrobe_service.dart';
 import '../scanner/add_item_screen.dart';
+import 'item_detail_screen.dart';
 
 class SmartClosetScreen extends StatelessWidget {
   const SmartClosetScreen({super.key});
@@ -61,7 +64,8 @@ class SmartClosetScreen extends StatelessWidget {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const AddItemScreen()),
+                        MaterialPageRoute(
+                            builder: (_) => const AddItemScreen()),
                       );
                     },
                     child: const Text('Add Your First Item'),
@@ -77,7 +81,8 @@ class SmartClosetScreen extends StatelessWidget {
               crossAxisCount: 2,
               crossAxisSpacing: 16,
               mainAxisSpacing: 16,
-              childAspectRatio: 0.75,
+              childAspectRatio:
+                  0.5, // Changed from 0.75 to 0.5 for 50% smaller cards
             ),
             itemCount: items.length,
             itemBuilder: (context, index) {
@@ -91,94 +96,227 @@ class SmartClosetScreen extends StatelessWidget {
   }
 }
 
-class _ItemCard extends StatelessWidget {
+class _ItemCard extends StatefulWidget {
   final ClothingItem item;
 
   const _ItemCard({required this.item});
 
   @override
+  State<_ItemCard> createState() => _ItemCardState();
+}
+
+class _ItemCardState extends State<_ItemCard> {
+  String? _imageUrl;
+  bool _isLoadingUrl = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadImageUrl();
+  }
+
+  @override
+  void didUpdateWidget(_ItemCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.item.thumbnailUrl != widget.item.thumbnailUrl) {
+      _loadImageUrl();
+    }
+  }
+
+  Future<void> _loadImageUrl() async {
+    if (widget.item.thumbnailUrl.isEmpty) {
+      setState(() => _imageUrl = null);
+      return;
+    }
+
+    setState(() => _isLoadingUrl = true);
+
+    try {
+      // First try the stored URL
+      setState(() => _imageUrl = widget.item.thumbnailUrl);
+    } catch (e) {
+      debugPrint('Error setting initial URL: $e');
+    } finally {
+      setState(() => _isLoadingUrl = false);
+    }
+  }
+
+  Future<void> _getFreshUrl() async {
+    if (!mounted) return;
+
+    setState(() => _isLoadingUrl = true);
+
+    try {
+      final imageService = context.read<ImageService>();
+      final userId = context.read<AuthService>().currentUser?.uid;
+
+      if (userId != null && widget.item.thumbnailUrl.isNotEmpty) {
+        // Extract the path from the thumbnail URL
+        final uri = Uri.parse(widget.item.thumbnailUrl);
+        final pathSegments = uri.pathSegments;
+
+        // Find the thumbnail path (should be users/{userId}/wardrobe/thumbnails/{itemId}_thumb.jpg)
+        final thumbnailIndex = pathSegments.indexOf('thumbnails');
+        if (thumbnailIndex >= 0 && thumbnailIndex < pathSegments.length - 1) {
+          final thumbnailPath =
+              pathSegments.sublist(thumbnailIndex - 1).join('/');
+          final freshUrl =
+              await imageService.getFreshDownloadUrl(userId, thumbnailPath);
+
+          if (freshUrl != null && mounted) {
+            setState(() => _imageUrl = freshUrl);
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error getting fresh URL: $e');
+    } finally {
+      if (mounted) setState(() => _isLoadingUrl = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Card(
       clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                Image.network(
-                  item.imageUrl,
-                  fit: BoxFit.cover,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return const Center(child: CircularProgressIndicator());
-                  },
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ItemDetailScreen(item: widget.item),
+            ),
+          );
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (_isLoadingUrl)
+                    const Center(child: CircularProgressIndicator())
+                  else if (_imageUrl != null)
+                    Image.network(
+                      _imageUrl!,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return const Center(child: CircularProgressIndicator());
+                      },
+                      errorBuilder: (context, error, stackTrace) {
+                        debugPrint(
+                            'Failed to load thumbnail: $_imageUrl, error: $error');
+                        // Try to get a fresh URL on error
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          _getFreshUrl();
+                        });
+                        return Container(
+                          color: Colors.grey[200],
+                          child: const Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.image_not_supported,
+                                    size: 40, color: Colors.grey),
+                                SizedBox(height: 8),
+                                Text(
+                                  'Image unavailable',
+                                  style: TextStyle(
+                                      fontSize: 12, color: Colors.grey),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    )
+                  else
+                    Container(
                       color: Colors.grey[200],
                       child: const Center(
-                        child: Icon(Icons.image_not_supported, size: 40),
-                      ),
-                    );
-                  },
-                ),
-                if (item.personaIds.isNotEmpty)
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.7),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        '${(item.personaIds.length * 20).clamp(0, 100)}%',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.image_not_supported,
+                                size: 40, color: Colors.grey),
+                            SizedBox(height: 8),
+                            Text(
+                              'No image',
+                              style:
+                                  TextStyle(fontSize: 12, color: Colors.grey),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                  ),
-              ],
+                  if (widget.item.personaIds.isNotEmpty)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.7),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '${(widget.item.personaIds.length * 20).clamp(0, 100)}%',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.category.toUpperCase(),
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                if (item.brand.isNotEmpty)
-                  Text(
-                    item.brand,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Brand and Model or just category if generic
+                  if (widget.item.brand.isNotEmpty)
+                    Text(
+                      widget.item.brand,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    )
+                  else
+                    Text(
+                      widget.item.category[0].toUpperCase() +
+                          widget.item.category.substring(1), // Title case
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  // Category type in bottom right
+                  Align(
+                    alignment: Alignment.bottomRight,
+                    child: Text(
+                      widget.item.category[0].toUpperCase() +
+                          widget.item.category.substring(1), // Title case
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.grey[600],
+                      ),
                     ),
                   ),
-                if (item.tags.isNotEmpty)
-                  Wrap(
-                    spacing: 4,
-                    children: item.tags.take(2).map((tag) => Chip(
-                      label: Text(tag, style: const TextStyle(fontSize: 10)),
-                      padding: EdgeInsets.zero,
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    )).toList(),
-                  ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

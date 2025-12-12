@@ -18,14 +18,19 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Create AuthService and initialize it
+  final authService = AuthService(
+    auth: FirebaseAuth.instance,
+    firestore: FirebaseFirestore.instance,
+  );
+  await authService.initializeAuth();
+
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(
-          create: (_) => AuthService(
-            auth: FirebaseAuth.instance,
-            firestore: FirebaseFirestore.instance,
-          ),
+        ChangeNotifierProvider.value(
+          value: authService,
         ),
         Provider<DatabaseService>(
           create: (_) => DatabaseService(

@@ -1,9 +1,10 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+
 import '../../models/clothing_item.dart';
-import '../../services/wardrobe_service.dart';
 import '../../services/sharing_service.dart';
+import '../../services/wardrobe_service.dart';
 
 class ItemDetailScreen extends StatefulWidget {
   final ClothingItem item;
@@ -18,7 +19,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   bool _isDeleting = false;
   bool _isEditing = false;
   late String _selectedCategory;
-  
+
   final List<String> _categories = [
     'top',
     'bottom',
@@ -38,12 +39,13 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     final wardrobeService = context.read<WardrobeService>();
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
-    
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Item'),
-        content: const Text('Are you sure you want to delete this item? This action cannot be undone.'),
+        content: const Text(
+            'Are you sure you want to delete this item? This action cannot be undone.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -64,7 +66,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
     try {
       await wardrobeService.deleteItem(widget.item.id, widget.item.userId);
-      
+
       if (mounted) {
         messenger.showSnackBar(
           const SnackBar(
@@ -92,7 +94,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     try {
       final sharingService = SharingService();
       await sharingService.shareItem(widget.item.id, widget.item.imageUrl);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -123,8 +125,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     final messenger = ScaffoldMessenger.of(context);
 
     try {
-      await wardrobeService.updateItem(widget.item.id, {'category': _selectedCategory});
-      
+      await wardrobeService
+          .updateItem(widget.item.id, {'category': _selectedCategory});
+
       if (mounted) {
         messenger.showSnackBar(
           const SnackBar(
@@ -150,8 +153,19 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.item.category.toUpperCase()),
+        title: Text(widget.item.category[0].toUpperCase() +
+            widget.item.category.substring(1)),
         actions: [
+          // Added date in top right
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: Center(
+              child: Text(
+                'Added: ${widget.item.createdAt.day}/${widget.item.createdAt.month}/${widget.item.createdAt.year}',
+                style: const TextStyle(fontSize: 12, color: Colors.white70),
+              ),
+            ),
+          ),
           if (!_isEditing)
             IconButton(
               icon: const Icon(Icons.edit),
@@ -247,13 +261,14 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  
+
                   // Category
                   Row(
                     children: [
                       const Text(
                         'Category: ',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                       if (_isEditing)
                         Expanded(
@@ -270,7 +285,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                                 items: _categories.map((category) {
                                   return DropdownMenuItem(
                                     value: category,
-                                    child: Text(category.toUpperCase()),
+                                    child: Text(category[0].toUpperCase() +
+                                        category.substring(1)),
                                   );
                                 }).toList(),
                                 onChanged: (value) {
@@ -284,20 +300,22 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                         )
                       else
                         Text(
-                          widget.item.category.toUpperCase(),
+                          widget.item.category[0].toUpperCase() +
+                              widget.item.category.substring(1),
                           style: const TextStyle(fontSize: 16),
                         ),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  
-                  // Brand
+
+                  // Brand/Model
                   if (widget.item.brand.isNotEmpty) ...[
                     Row(
                       children: [
                         const Text(
-                          'Brand: ',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          'Brand/Model: ',
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                         Text(
                           widget.item.brand,
@@ -307,12 +325,13 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                     ),
                     const SizedBox(height: 16),
                   ],
-                  
+
                   // Colors
                   if (widget.item.colors.isNotEmpty) ...[
                     const Text(
                       'Colors:',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     Wrap(
@@ -327,12 +346,13 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                     ),
                     const SizedBox(height: 16),
                   ],
-                  
+
                   // Style Tags
                   if (widget.item.styleTags.isNotEmpty) ...[
                     const Text(
                       'Style Tags:',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     Wrap(
@@ -347,20 +367,35 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                     ),
                     const SizedBox(height: 16),
                   ],
-                  
-                  // Added Date
-                  Row(
-                    children: [
-                      const Text(
-                        'Added: ',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                      Text(
-                        '${widget.item.createdAt.day}/${widget.item.createdAt.month}/${widget.item.createdAt.year}',
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                    ],
-                  ),
+
+                  // Style Personas
+                  if (widget.item.personaIds.isNotEmpty) ...[
+                    const Text(
+                      'Style Personas:',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: widget.item.personaIds.map((personaId) {
+                        return Chip(
+                          label: Text('Persona $personaId'),
+                          backgroundColor: Colors.purple[100],
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Fit percentages will be calculated and displayed here.',
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                          fontStyle: FontStyle.italic),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                 ],
               ),
             ),
