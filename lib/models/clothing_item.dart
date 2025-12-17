@@ -14,6 +14,7 @@ class ClothingItem {
   final List<String> styleTags;
   final List<String> personaIds;
   final String scanMethod;
+  final String status; // 'uploading', 'analyzing', 'completed', 'error'
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -34,6 +35,7 @@ class ClothingItem {
     required this.styleTags,
     required this.personaIds,
     required this.scanMethod,
+    this.status = 'completed',
     required this.createdAt,
     required this.updatedAt,
   });
@@ -54,6 +56,7 @@ class ClothingItem {
       styleTags: List<String>.from(data['styleTags'] ?? data['tags'] ?? []),
       personaIds: List<String>.from(data['personaIds'] ?? []),
       scanMethod: data['scanMethod'] ?? '',
+      status: data['status'] ?? 'completed',
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
@@ -75,6 +78,7 @@ class ClothingItem {
       'tags': styleTags, // Backward compatibility
       'personaIds': personaIds,
       'scanMethod': scanMethod,
+      'status': status,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
     };
@@ -94,6 +98,7 @@ class ClothingItem {
     List<String>? styleTags,
     List<String>? personaIds,
     String? scanMethod,
+    String? status,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -111,6 +116,7 @@ class ClothingItem {
       styleTags: styleTags ?? this.styleTags,
       personaIds: personaIds ?? this.personaIds,
       scanMethod: scanMethod ?? this.scanMethod,
+      status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
