@@ -81,8 +81,7 @@ class SmartClosetScreen extends StatelessWidget {
               crossAxisCount: 2,
               crossAxisSpacing: 16,
               mainAxisSpacing: 16,
-              childAspectRatio:
-                  0.5, // Changed from 0.75 to 0.5 for 50% smaller cards
+              childAspectRatio: 0.75, // Improved aspect ratio
             ),
             itemCount: items.length,
             itemBuilder: (context, index) {
@@ -177,8 +176,12 @@ class _ItemCardState extends State<_ItemCard> {
 
   @override
   Widget build(BuildContext context) {
+    final isAnalyzing = widget.item.status == 'uploading' || widget.item.status == 'analyzing';
+
     return Card(
       clipBehavior: Clip.antiAlias,
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: () {
           Navigator.push(
@@ -197,7 +200,7 @@ class _ItemCardState extends State<_ItemCard> {
                 children: [
                   if (_isLoadingUrl)
                     const Center(child: CircularProgressIndicator())
-                  else if (_imageUrl != null)
+                  else if (_imageUrl != null && _imageUrl!.isNotEmpty)
                     Image.network(
                       _imageUrl!,
                       fit: BoxFit.cover,
@@ -251,7 +254,30 @@ class _ItemCardState extends State<_ItemCard> {
                         ),
                       ),
                     ),
-                  if (widget.item.personaIds.isNotEmpty)
+                  // Analyzing Overlay
+                  if (isAnalyzing)
+                    Container(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      child: const Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CircularProgressIndicator(color: Colors.white),
+                            SizedBox(height: 8),
+                            Text(
+                              'AI Analyzing...',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  // Persona Match Indicator
+                  if (!isAnalyzing && widget.item.personaIds.isNotEmpty)
                     Positioned(
                       top: 8,
                       right: 8,
@@ -276,7 +302,7 @@ class _ItemCardState extends State<_ItemCard> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.all(10.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -285,7 +311,7 @@ class _ItemCardState extends State<_ItemCard> {
                     Text(
                       widget.item.brand,
                       style: const TextStyle(
-                        fontSize: 12,
+                        fontSize: 14,
                         fontWeight: FontWeight.bold,
                       ),
                       maxLines: 1,
@@ -296,20 +322,18 @@ class _ItemCardState extends State<_ItemCard> {
                       widget.item.category[0].toUpperCase() +
                           widget.item.category.substring(1), // Title case
                       style: const TextStyle(
-                        fontSize: 12,
+                        fontSize: 14,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
+                  const SizedBox(height: 4),
                   // Category type in bottom right
-                  Align(
-                    alignment: Alignment.bottomRight,
-                    child: Text(
-                      widget.item.category[0].toUpperCase() +
-                          widget.item.category.substring(1), // Title case
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Colors.grey[600],
-                      ),
+                  Text(
+                    widget.item.category[0].toUpperCase() +
+                        widget.item.category.substring(1), // Title case
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
                     ),
                   ),
                 ],
