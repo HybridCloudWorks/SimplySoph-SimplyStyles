@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../auth/auth_service.dart';
 import '../../models/clothing_item.dart';
 import '../../services/wardrobe_service.dart';
+import '../components/network_image_with_retry.dart';
 
 class OutfitBuilderScreen extends StatefulWidget {
   const OutfitBuilderScreen({super.key});
@@ -118,6 +119,11 @@ class _OutfitBuilderScreenState extends State<OutfitBuilderScreen> {
                       ],
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Drag items from below or click to remove',
+                    style: TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
                 ],
               ),
             ),
@@ -163,11 +169,21 @@ class _OutfitBuilderScreenState extends State<OutfitBuilderScreen> {
         final droppedItem = details.data;
 
         // Validate category matching
-        if (category != 'accessory' && droppedItem.category != category) {
+        // Map logical categories to generic ones if needed, or stick to strict matching
+        bool isMatch = false;
+        if (category == 'accessory') {
+           isMatch = droppedItem.category == 'accessory';
+        } else if (category == 'top') {
+           isMatch = droppedItem.category == 'top' || droppedItem.category == 'outerwear' || droppedItem.category == 'dress';
+        } else {
+           isMatch = droppedItem.category == category;
+        }
+
+        if (!isMatch) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                  '${droppedItem.category} items can only be placed in ${droppedItem.category} zones'),
+                  'Cannot put ${droppedItem.category} in $category zone'),
               backgroundColor: Colors.orange,
             ),
           );
@@ -193,32 +209,55 @@ class _OutfitBuilderScreenState extends State<OutfitBuilderScreen> {
         _calculateOutfitScore();
       },
       builder: (context, candidateData, rejectedData) {
-        return Container(
-          margin: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            border: Border.all(
-                color: candidateData.isNotEmpty
-                    ? const Color(0xFF8B5CF6)
-                    : Colors.grey,
-                width: 2),
-            borderRadius: BorderRadius.circular(8),
-            color: candidateData.isNotEmpty
-                ? const Color(0xFF8B5CF6).withValues(alpha: 0.1)
-                : Colors.grey[100],
-          ),
-          child: item != null
-              ? _buildMiniCard(item)
-              : Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(icon, size: 32, color: Colors.grey),
-                      Text(category.toUpperCase(),
-                          style: const TextStyle(
-                              fontSize: 10, color: Colors.grey)),
-                    ],
+        return GestureDetector(
+          onTap: () {
+            if (item != null) {
+              setState(() {
+                switch (category) {
+                  case 'top':
+                    _selectedTop = null;
+                    break;
+                  case 'bottom':
+                    _selectedBottom = null;
+                    break;
+                  case 'shoes':
+                    _selectedShoes = null;
+                    break;
+                  case 'accessory':
+                    _selectedAccessory = null;
+                    break;
+                }
+                _calculateOutfitScore();
+              });
+            }
+          },
+          child: Container(
+            margin: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              border: Border.all(
+                  color: candidateData.isNotEmpty
+                      ? const Color(0xFF8B5CF6)
+                      : Colors.grey,
+                  width: 2),
+              borderRadius: BorderRadius.circular(8),
+              color: candidateData.isNotEmpty
+                  ? const Color(0xFF8B5CF6).withValues(alpha: 0.1)
+                  : Colors.grey[100],
+            ),
+            child: item != null
+                ? _buildMiniCard(item)
+                : Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(icon, size: 32, color: Colors.grey),
+                        Text(category.toUpperCase(),
+                            style: const TextStyle(
+                                fontSize: 10, color: Colors.grey)),
+                      ],
+                    ),
                   ),
-                ),
+          ),
         );
       },
     );
@@ -226,6 +265,7 @@ class _OutfitBuilderScreenState extends State<OutfitBuilderScreen> {
 
   Widget _buildMiniCard(ClothingItem item) {
     return Card(
+      clipBehavior: Clip.antiAlias,
       child: Column(
         children: [
           Container(
@@ -242,25 +282,18 @@ class _OutfitBuilderScreenState extends State<OutfitBuilderScreen> {
           ),
           Expanded(
             child: Container(
-              color: Colors.blue,
+              color: Colors.white,
               child: item.thumbnailUrl.isNotEmpty
-                  ? Image.network(
-                      item.thumbnailUrl,
+                  ? NetworkImageWithRetry(
+                      imageUrl: item.thumbnailUrl,
                       fit: BoxFit.cover,
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return const Center(child: CircularProgressIndicator());
-                      },
-                      errorBuilder: (context, error, stackTrace) {
-                        debugPrint(
-                            'Failed to load thumbnail: ${item.thumbnailUrl}, error: $error');
-                        return const Center(
-                          child: Icon(Icons.image_not_supported,
-                              color: Colors.white),
-                        );
-                      },
+                      placeholder: const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))),
+                      errorWidget: const Center(
+                        child: Icon(Icons.image_not_supported,
+                            color: Colors.grey, size: 20),
+                      ),
                     )
-                  : const Icon(Icons.checkroom, color: Colors.white),
+                  : const Center(child: Icon(Icons.checkroom, color: Colors.grey)),
             ),
           ),
           Container(
@@ -331,6 +364,8 @@ class _ClothingCarouselState extends State<_ClothingCarousel> {
                   child: Draggable<ClothingItem>(
                     data: item,
                     feedback: Material(
+                      elevation: 4,
+                      borderRadius: BorderRadius.circular(8),
                       child: SizedBox(
                         width: 100,
                         height: 140,
@@ -360,6 +395,7 @@ class _ClothingCarouselState extends State<_ClothingCarousel> {
 
   Widget _buildMiniCard(ClothingItem item) {
     return Card(
+      clipBehavior: Clip.antiAlias,
       child: Column(
         children: [
           Container(
@@ -376,25 +412,18 @@ class _ClothingCarouselState extends State<_ClothingCarousel> {
           ),
           Expanded(
             child: Container(
-              color: Colors.blue,
+              color: Colors.white,
               child: item.thumbnailUrl.isNotEmpty
-                  ? Image.network(
-                      item.thumbnailUrl,
+                  ? NetworkImageWithRetry(
+                      imageUrl: item.thumbnailUrl,
                       fit: BoxFit.cover,
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return const Center(child: CircularProgressIndicator());
-                      },
-                      errorBuilder: (context, error, stackTrace) {
-                        debugPrint(
-                            'Failed to load thumbnail: ${item.thumbnailUrl}, error: $error');
-                        return const Center(
-                          child: Icon(Icons.image_not_supported,
-                              color: Colors.white),
-                        );
-                      },
+                      placeholder: const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))),
+                      errorWidget: const Center(
+                        child: Icon(Icons.image_not_supported,
+                            color: Colors.grey, size: 20),
+                      ),
                     )
-                  : const Icon(Icons.checkroom, color: Colors.white),
+                  : const Center(child: Icon(Icons.checkroom, color: Colors.grey)),
             ),
           ),
           Container(

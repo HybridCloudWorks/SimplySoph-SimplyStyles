@@ -5,6 +5,7 @@ import '../../auth/auth_service.dart';
 import '../../models/clothing_item.dart';
 import '../../services/image_service.dart';
 import '../../services/wardrobe_service.dart';
+import '../components/network_image_with_retry.dart';
 import '../scanner/add_item_screen.dart';
 import 'item_detail_screen.dart';
 
@@ -95,88 +96,14 @@ class SmartClosetScreen extends StatelessWidget {
   }
 }
 
-class _ItemCard extends StatefulWidget {
+class _ItemCard extends StatelessWidget {
   final ClothingItem item;
 
   const _ItemCard({required this.item});
 
   @override
-  State<_ItemCard> createState() => _ItemCardState();
-}
-
-class _ItemCardState extends State<_ItemCard> {
-  String? _imageUrl;
-  bool _isLoadingUrl = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadImageUrl();
-  }
-
-  @override
-  void didUpdateWidget(_ItemCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.item.thumbnailUrl != widget.item.thumbnailUrl) {
-      _loadImageUrl();
-    }
-  }
-
-  Future<void> _loadImageUrl() async {
-    if (widget.item.thumbnailUrl.isEmpty) {
-      setState(() => _imageUrl = null);
-      return;
-    }
-
-    setState(() => _isLoadingUrl = true);
-
-    try {
-      // First try the stored URL
-      setState(() => _imageUrl = widget.item.thumbnailUrl);
-    } catch (e) {
-      debugPrint('Error setting initial URL: $e');
-    } finally {
-      setState(() => _isLoadingUrl = false);
-    }
-  }
-
-  Future<void> _getFreshUrl() async {
-    if (!mounted) return;
-
-    setState(() => _isLoadingUrl = true);
-
-    try {
-      final imageService = context.read<ImageService>();
-      final userId = context.read<AuthService>().currentUser?.uid;
-
-      if (userId != null && widget.item.thumbnailUrl.isNotEmpty) {
-        // Extract the path from the thumbnail URL
-        final uri = Uri.parse(widget.item.thumbnailUrl);
-        final pathSegments = uri.pathSegments;
-
-        // Find the thumbnail path (should be users/{userId}/wardrobe/thumbnails/{itemId}_thumb.jpg)
-        final thumbnailIndex = pathSegments.indexOf('thumbnails');
-        if (thumbnailIndex >= 0 && thumbnailIndex < pathSegments.length - 1) {
-          final thumbnailPath =
-              pathSegments.sublist(thumbnailIndex - 1).join('/');
-          final freshUrl =
-              await imageService.getFreshDownloadUrl(userId, thumbnailPath);
-
-          if (freshUrl != null && mounted) {
-            setState(() => _imageUrl = freshUrl);
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint('Error getting fresh URL: $e');
-    } finally {
-      if (mounted) setState(() => _isLoadingUrl = false);
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final isAnalyzing = widget.item.status == 'uploading' || widget.item.status == 'analyzing';
+    final isAnalyzing = item.status == 'uploading' || item.status == 'analyzing';
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -187,7 +114,7 @@ class _ItemCardState extends State<_ItemCard> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => ItemDetailScreen(item: widget.item),
+              builder: (_) => ItemDetailScreen(item: item),
             ),
           );
         },
@@ -198,42 +125,28 @@ class _ItemCardState extends State<_ItemCard> {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  if (_isLoadingUrl)
-                    const Center(child: CircularProgressIndicator())
-                  else if (_imageUrl != null && _imageUrl!.isNotEmpty)
-                    Image.network(
-                      _imageUrl!,
+                  if (item.thumbnailUrl.isNotEmpty)
+                    NetworkImageWithRetry(
+                      imageUrl: item.thumbnailUrl,
                       fit: BoxFit.cover,
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return const Center(child: CircularProgressIndicator());
-                      },
-                      errorBuilder: (context, error, stackTrace) {
-                        debugPrint(
-                            'Failed to load thumbnail: $_imageUrl, error: $error');
-                        // Try to get a fresh URL on error
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          _getFreshUrl();
-                        });
-                        return Container(
-                          color: Colors.grey[200],
-                          child: const Center(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.image_not_supported,
-                                    size: 40, color: Colors.grey),
-                                SizedBox(height: 8),
-                                Text(
-                                  'Image unavailable',
-                                  style: TextStyle(
-                                      fontSize: 12, color: Colors.grey),
-                                ),
-                              ],
-                            ),
+                      errorWidget: Container(
+                        color: Colors.grey[200],
+                        child: const Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.image_not_supported,
+                                  size: 40, color: Colors.grey),
+                              SizedBox(height: 8),
+                              Text(
+                                'Image unavailable',
+                                style: TextStyle(
+                                    fontSize: 12, color: Colors.grey),
+                              ),
+                            ],
                           ),
-                        );
-                      },
+                        ),
+                      ),
                     )
                   else
                     Container(
@@ -277,7 +190,7 @@ class _ItemCardState extends State<_ItemCard> {
                       ),
                     ),
                   // Persona Match Indicator
-                  if (!isAnalyzing && widget.item.personaIds.isNotEmpty)
+                  if (!isAnalyzing && item.personaIds.isNotEmpty)
                     Positioned(
                       top: 8,
                       right: 8,
@@ -289,7 +202,7 @@ class _ItemCardState extends State<_ItemCard> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          '${(widget.item.personaIds.length * 20).clamp(0, 100)}%',
+                          '${(item.personaIds.length * 20).clamp(0, 100)}%',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 12,
@@ -307,9 +220,9 @@ class _ItemCardState extends State<_ItemCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Brand and Model or just category if generic
-                  if (widget.item.brand.isNotEmpty)
+                  if (item.brand.isNotEmpty)
                     Text(
-                      widget.item.brand,
+                      item.brand,
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -319,8 +232,8 @@ class _ItemCardState extends State<_ItemCard> {
                     )
                   else
                     Text(
-                      widget.item.category[0].toUpperCase() +
-                          widget.item.category.substring(1), // Title case
+                      item.category[0].toUpperCase() +
+                          item.category.substring(1), // Title case
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -329,8 +242,8 @@ class _ItemCardState extends State<_ItemCard> {
                   const SizedBox(height: 4),
                   // Category type in bottom right
                   Text(
-                    widget.item.category[0].toUpperCase() +
-                        widget.item.category.substring(1), // Title case
+                    item.category[0].toUpperCase() +
+                        item.category.substring(1), // Title case
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey[600],
