@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'package:uuid/uuid.dart';
 
 import '../models/clothing_item.dart';
 import 'email_service.dart';
@@ -12,13 +13,15 @@ const List<String> _validCategories = [
   'bottom',
   'dress',
   'shoes',
-  'accessory'
+  'accessory',
+  'outerwear'
 ];
 
 class WardrobeService {
   final FirestoreService _firestoreService;
   final ImageService _imageService;
   late final PersonaService _personaService;
+  final Uuid _uuid = const Uuid();
 
   WardrobeService({
     required FirestoreService firestoreService,
@@ -45,23 +48,18 @@ class WardrobeService {
           'Invalid category: $category. Must be one of $_validCategories');
     }
 
-    String? storageItemId;
+    // Generate IDs upfront
+    final storageItemId = _uuid.v4();
     String? docId;
 
     try {
-      // Upload image
-      final imageUrls = await _imageService.uploadClothingImage(
-        userId: userId,
-        imageBytes: imageBytes,
-      );
-      storageItemId = imageUrls['itemId'];
-
-      // Create item
-      final item = ClothingItem(
+      // 1. Create initial Firestore document with 'uploading' status
+      // This ensures the document exists before the Cloud Function triggers
+      final initialItem = ClothingItem(
         id: '',
         userId: userId,
-        imageUrl: imageUrls['original']!,
-        thumbnailUrl: imageUrls['thumbnail']!,
+        imageUrl: '', // Placeholder
+        thumbnailUrl: '', // Placeholder
         category: category,
         color: '#000000',
         colors: [],
@@ -71,16 +69,52 @@ class WardrobeService {
         styleTags: [],
         personaIds: [],
         scanMethod: 'upload',
+        status: 'uploading',
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
 
-      // Save to Firestore
-      docId = await _firestoreService.addClothingItem(item);
+      // Add to Firestore and get the generated document ID
+      final docRef = await _firestoreService.firestore.collection('wardrobe_items').add(initialItem.toFirestore());
+      docId = docRef.id;
 
-      // Update item with storage itemId for future deletion
+      // Update with storageItemId so cloud function can match it
       await _firestoreService.updateClothingItem(docId, {
         'storageItemId': storageItemId,
+      });
+
+      // 2. Upload image (using the pre-generated storageItemId)
+      // We need to modify ImageService to accept a custom itemId or handle this logic here.
+      // Since ImageService generates its own ID, we might need to change it or use its return value.
+      // Wait, ImageService uses uuid.v4() internally.
+      // To ensure consistency, we should probably refactor ImageService to accept an optional itemId,
+      // OR allow ImageService to generate it and we update the doc.
+      // BUT if we want to fix the race condition, we must know the ID *before* upload starts
+      // OR ensuring the Doc exists with the ID that the Cloud Function will see.
+
+      // The Cloud Function parses the storage path: users/$userId/wardrobe/original/$itemId.jpg
+      // So if we let ImageService generate the ID, we get it back *after* upload starts/finishes.
+      // If the Cloud Function fires fast, it sees the file, extracts ID, queries Firestore.
+      // If we haven't created the doc yet, it fails.
+
+      // So we MUST use the ID we generated here.
+      // Let's assume we modify ImageService to accept itemId or we manually do the upload logic here?
+      // Better to modify ImageService to be more flexible.
+
+      // For now, let's look at ImageService again. It generates ID internally.
+      // I will refactor ImageService to accept an optional itemId.
+
+      final imageUrls = await _imageService.uploadClothingImage(
+        userId: userId,
+        imageBytes: imageBytes,
+        customItemId: storageItemId,
+      );
+
+      // 3. Update document with URLs and 'analyzing' status
+      await _firestoreService.updateClothingItem(docId, {
+        'imageUrl': imageUrls['original'],
+        'thumbnailUrl': imageUrls['thumbnail'],
+        'status': 'analyzing',
       });
 
       // Check if this is user's first item
@@ -101,19 +135,27 @@ class WardrobeService {
       final personaCount = await _personaService.getPersonaCount(userId);
       if (itemCount >= 5 && personaCount == 0) {
         try {
-          await _personaService.generatePersonas(userId);
-          debugPrint('Style personas generated for user $userId');
+          // We can run this in background
+          _personaService.generatePersonas(userId).then((_) {
+             debugPrint('Style personas generated for user $userId');
+          }).catchError((e) {
+             debugPrint('Failed to generate personas: $e');
+          });
         } catch (e) {
-          debugPrint('Failed to generate personas: $e');
-          // Don't fail the item addition if persona generation fails
+          debugPrint('Failed to trigger persona generation: $e');
         }
       }
 
       return docId;
     } catch (e) {
-      // Rollback: delete uploaded images if Firestore write failed
-      if (storageItemId != null && docId == null) {
-        debugPrint('Rolling back image upload due to Firestore error');
+      // Rollback
+      debugPrint('Error adding item: $e');
+
+      if (docId != null) {
+        await _firestoreService.deleteClothingItem(docId);
+      }
+
+      if (storageItemId.isNotEmpty) {
         await _imageService.deleteClothingImage(userId, storageItemId);
       }
       rethrow;
@@ -144,9 +186,6 @@ class WardrobeService {
     if (itemId.isEmpty || userId.isEmpty) {
       throw ArgumentError('itemId and userId cannot be empty');
     }
-
-    final item = await _firestoreService.getClothingItem(itemId);
-    if (item == null) return;
 
     // Get storageItemId from item data
     final itemData = await FirebaseFirestore.instance
@@ -192,6 +231,7 @@ class WardrobeService {
       'tags': analysis['tags'] ?? [],
       'brand': analysis['brand'] ?? '',
       'msrp': analysis['msrp'] ?? 0,
+      'status': 'completed', // Mark as completed
     });
   }
 }

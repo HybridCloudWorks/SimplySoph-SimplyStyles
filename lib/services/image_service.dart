@@ -13,9 +13,11 @@ class ImageService {
 
   /// Upload clothing image from bytes
   /// Performs client-side resizing for immediate thumbnail availability.
+  /// Accepts [customItemId] to allow pre-generation of IDs.
   Future<Map<String, String>> uploadClothingImage({
     required String userId,
     required Uint8List imageBytes,
+    String? customItemId,
   }) async {
     if (userId.isEmpty) throw ArgumentError('userId cannot be empty');
     if (imageBytes.isEmpty) throw ArgumentError('imageBytes cannot be empty');
@@ -38,7 +40,7 @@ class ImageService {
     }
 
     try {
-      final itemId = _uuid.v4();
+      final itemId = customItemId ?? _uuid.v4();
 
       // Upload original with metadata
       final originalRef = FirebaseStorage.instance
