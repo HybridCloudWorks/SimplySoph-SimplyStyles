@@ -144,6 +144,7 @@ class ImageService {
   }
 
   /// Get a fresh download URL for an image (handles token refresh automatically)
+  /// [imagePath] should be relative to "users/$userId/".
   Future<String?> getFreshDownloadUrl(String userId, String imagePath) async {
     try {
       // Check authentication

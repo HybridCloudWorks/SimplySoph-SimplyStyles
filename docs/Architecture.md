@@ -44,6 +44,11 @@ SimplyStyles uses a Flutter client with Firebase BaaS and Gemini AI for analysis
 - Firestore rules: user-isolation for `users`, `wardrobe_items`
 - Storage rules: user-owned paths, image content-types, size limits
 
+## Image Handling
+
+- **Path Convention**: `ImageService.getFreshDownloadUrl` expects a path relative to `users/$userId/` (e.g., `wardrobe/thumbnails/item_thumb.jpg`). The service internally prepends the user prefix.
+- **Components**: `NetworkImageWithRetry` automatically handles this prefix stripping when refreshing tokens.
+
 ## Scalability & Ops
 
 - Caching, pagination, thumbnails, CDN, indexes, rate-limiting
