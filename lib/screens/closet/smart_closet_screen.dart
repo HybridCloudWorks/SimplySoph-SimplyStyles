@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 
 import '../../auth/auth_service.dart';
 import '../../models/clothing_item.dart';
-import '../../services/image_service.dart';
 import '../../services/wardrobe_service.dart';
 import '../components/network_image_with_retry.dart';
 import '../scanner/add_item_screen.dart';
