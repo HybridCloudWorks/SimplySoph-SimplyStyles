@@ -55,6 +55,7 @@ class WardrobeService {
     try {
       // 1. Create initial Firestore document with 'uploading' status
       // This ensures the document exists before the Cloud Function triggers
+      // We explicitly set storageItemId here to avoid race conditions with the Cloud Function.
       final initialItem = ClothingItem(
         id: '',
         userId: userId,
@@ -70,6 +71,7 @@ class WardrobeService {
         personaIds: [],
         scanMethod: 'upload',
         status: 'uploading',
+        storageItemId: storageItemId,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
@@ -78,32 +80,9 @@ class WardrobeService {
       final docRef = await _firestoreService.firestore.collection('wardrobe_items').add(initialItem.toFirestore());
       docId = docRef.id;
 
-      // Update with storageItemId so cloud function can match it
-      await _firestoreService.updateClothingItem(docId, {
-        'storageItemId': storageItemId,
-      });
-
       // 2. Upload image (using the pre-generated storageItemId)
-      // We need to modify ImageService to accept a custom itemId or handle this logic here.
-      // Since ImageService generates its own ID, we might need to change it or use its return value.
-      // Wait, ImageService uses uuid.v4() internally.
-      // To ensure consistency, we should probably refactor ImageService to accept an optional itemId,
-      // OR allow ImageService to generate it and we update the doc.
-      // BUT if we want to fix the race condition, we must know the ID *before* upload starts
-      // OR ensuring the Doc exists with the ID that the Cloud Function will see.
-
-      // The Cloud Function parses the storage path: users/$userId/wardrobe/original/$itemId.jpg
-      // So if we let ImageService generate the ID, we get it back *after* upload starts/finishes.
-      // If the Cloud Function fires fast, it sees the file, extracts ID, queries Firestore.
-      // If we haven't created the doc yet, it fails.
-
-      // So we MUST use the ID we generated here.
-      // Let's assume we modify ImageService to accept itemId or we manually do the upload logic here?
-      // Better to modify ImageService to be more flexible.
-
-      // For now, let's look at ImageService again. It generates ID internally.
-      // I will refactor ImageService to accept an optional itemId.
-
+      // The document now exists with storageItemId, so the Cloud Function can safely
+      // find it when triggered by the upload.
       final imageUrls = await _imageService.uploadClothingImage(
         userId: userId,
         imageBytes: imageBytes,
