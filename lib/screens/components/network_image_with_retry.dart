@@ -23,7 +23,6 @@ class NetworkImageWithRetry extends StatefulWidget {
 
 class _NetworkImageWithRetryState extends State<NetworkImageWithRetry> {
   String? _currentUrl;
-  bool _isLoading = true;
   bool _hasError = false;
 
   @override
@@ -39,7 +38,6 @@ class _NetworkImageWithRetryState extends State<NetworkImageWithRetry> {
     if (oldWidget.imageUrl != widget.imageUrl) {
       setState(() {
         _currentUrl = widget.imageUrl;
-        _isLoading = true;
         _hasError = false;
       });
       _validateUrl();
@@ -48,19 +46,16 @@ class _NetworkImageWithRetryState extends State<NetworkImageWithRetry> {
 
   Future<void> _validateUrl() async {
     if (_currentUrl == null || _currentUrl!.isEmpty) {
-      if (mounted) setState(() => _isLoading = false);
       return;
     }
 
     // If it's not a storage URL, just try loading it
     if (!_currentUrl!.contains('firebasestorage')) {
-       if (mounted) setState(() => _isLoading = false);
        return;
     }
 
     // It's a storage URL, proceed to load.
     // We don't pre-fetch fresh URL unless loading fails.
-    if (mounted) setState(() => _isLoading = false);
   }
 
   Future<void> _refreshUrl() async {
