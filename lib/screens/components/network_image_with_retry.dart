@@ -29,7 +29,6 @@ class _NetworkImageWithRetryState extends State<NetworkImageWithRetry> {
   void initState() {
     super.initState();
     _currentUrl = widget.imageUrl;
-    _validateUrl();
   }
 
   @override
@@ -40,22 +39,7 @@ class _NetworkImageWithRetryState extends State<NetworkImageWithRetry> {
         _currentUrl = widget.imageUrl;
         _hasError = false;
       });
-      _validateUrl();
     }
-  }
-
-  Future<void> _validateUrl() async {
-    if (_currentUrl == null || _currentUrl!.isEmpty) {
-      return;
-    }
-
-    // If it's not a storage URL, just try loading it
-    if (!_currentUrl!.contains('firebasestorage')) {
-       return;
-    }
-
-    // It's a storage URL, proceed to load.
-    // We don't pre-fetch fresh URL unless loading fails.
   }
 
   Future<void> _refreshUrl() async {
