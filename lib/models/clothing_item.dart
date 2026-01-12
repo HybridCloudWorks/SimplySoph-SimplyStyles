@@ -15,6 +15,7 @@ class ClothingItem {
   final List<String> personaIds;
   final String scanMethod;
   final String status; // 'uploading', 'analyzing', 'completed', 'error'
+  final String? storageItemId; // For matching with Cloud Function uploads
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -36,6 +37,7 @@ class ClothingItem {
     required this.personaIds,
     required this.scanMethod,
     this.status = 'completed',
+    this.storageItemId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -57,6 +59,7 @@ class ClothingItem {
       personaIds: List<String>.from(data['personaIds'] ?? []),
       scanMethod: data['scanMethod'] ?? '',
       status: data['status'] ?? 'completed',
+      storageItemId: data['storageItemId'],
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
@@ -79,6 +82,7 @@ class ClothingItem {
       'personaIds': personaIds,
       'scanMethod': scanMethod,
       'status': status,
+      'storageItemId': storageItemId,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
     };
@@ -99,6 +103,7 @@ class ClothingItem {
     List<String>? personaIds,
     String? scanMethod,
     String? status,
+    String? storageItemId,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -117,6 +122,7 @@ class ClothingItem {
       personaIds: personaIds ?? this.personaIds,
       scanMethod: scanMethod ?? this.scanMethod,
       status: status ?? this.status,
+      storageItemId: storageItemId ?? this.storageItemId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
