@@ -90,10 +90,7 @@ class _NetworkImageWithRetryState extends State<NetworkImageWithRetry> {
 
           // Ensure path starts with users/{userId} to be safe
           if (path.startsWith('users/$userId/')) {
-             // Remove users/{userId}/ prefix for getFreshDownloadUrl if it expects relative?
-             // Checking ImageService... getFreshDownloadUrl expects "wardrobe/thumbnails/..."
-             // It prepends "users/$userId/".
-
+             // Remove users/{userId}/ prefix because getFreshDownloadUrl prepends it.
              final relativePath = path.replaceFirst('users/$userId/', '');
              final freshUrl = await imageService.getFreshDownloadUrl(userId, relativePath);
 
