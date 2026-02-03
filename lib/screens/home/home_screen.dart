@@ -249,7 +249,7 @@ class _DashboardTabState extends State<DashboardTab> {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => AddItemScreen()),
+                  MaterialPageRoute(builder: (_) => const AddItemScreen()),
                 ).then(
                     (_) => _loadItemCount()); // Refresh count after adding item
               },
