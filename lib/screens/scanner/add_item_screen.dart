@@ -120,16 +120,16 @@ class _AddItemScreenState extends State<AddItemScreen> {
         child: SingleChildScrollView(
           child: Center(
             child: _isUploading
-                ? Padding(
-                  padding: const EdgeInsets.all(32.0),
+                ? const Padding(
+                  padding: EdgeInsets.all(32.0),
                   child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const CircularProgressIndicator(),
-                        const SizedBox(height: 16),
-                        const Text('Uploading item...'),
-                        const SizedBox(height: 8),
-                        const Text(
+                        CircularProgressIndicator(),
+                        SizedBox(height: 16),
+                        Text('Uploading item...'),
+                        SizedBox(height: 8),
+                        Text(
                           'Analyzing image and uploading...',
                           style: TextStyle(color: Colors.grey, fontSize: 12),
                         ),

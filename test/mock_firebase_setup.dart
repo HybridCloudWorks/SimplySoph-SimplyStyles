@@ -9,7 +9,7 @@ void setupFirebaseCoreMocks() {
     const channelName = 'dev.flutter.pigeon.firebase_core_platform_interface.FirebaseCoreHostApi.initializeCore';
 
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockDecodedMessageHandler(
-      BasicMessageChannel(channelName, StandardMessageCodec()),
+      const BasicMessageChannel(channelName, StandardMessageCodec()),
       (message) async {
         // Pigeon expects a List<Object?> as the return value for the method call.
         // The first element is the result, usually.

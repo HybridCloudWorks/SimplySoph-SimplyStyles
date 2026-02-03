@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+
+import 'package:simplystyles/api/gemini_cortex_api.dart';
 
 class PersonaFitScannerScreen extends StatefulWidget {
   const PersonaFitScannerScreen({super.key});
@@ -9,30 +13,47 @@ class PersonaFitScannerScreen extends StatefulWidget {
 }
 
 class _PersonaFitScannerScreenState extends State<PersonaFitScannerScreen> {
+  final GeminiCortexAPI _geminiAPI = GeminiCortexAPI();
+  final ImagePicker _picker = ImagePicker();
+
   bool _isScanning = false;
   Map<String, dynamic>? _scanResult;
+  File? _image;
 
-  void _startScanning() {
-    setState(() {
-      _isScanning = true;
-      _scanResult = null;
-    });
+  Future<void> _startScanning() async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.camera);
 
-    // Simulate scanning delay
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        setState(() {
-          _isScanning = false;
-          _scanResult = {
-            'matchScore': 85,
-            'verdict': 'Great Match!',
-            'topPersona': 'Coastal Comfort',
-            'reasoning':
-                'This item perfectly matches your Coastal Comfort persona with its relaxed fit and beach-inspired colors.',
-          };
-        });
+    if (image != null) {
+      setState(() {
+        _isScanning = true;
+        _scanResult = null;
+        _image = File(image.path);
+      });
+
+      try {
+        //  Analyze the image to get item attributes
+        final itemAttributes = await _geminiAPI.analyzeClothingImage(image.path);
+
+        //  Calculate the persona fit
+        final result = await _geminiAPI.calculatePersonaFit(itemAttributes);
+
+        if (mounted) {
+          setState(() {
+            _isScanning = false;
+            _scanResult = result;
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            _isScanning = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: $e')),
+          );
+        }
       }
-    });
+    }
   }
 
   @override
@@ -43,37 +64,45 @@ class _PersonaFitScannerScreenState extends State<PersonaFitScannerScreen> {
       ),
       body: Stack(
         children: [
-          // Camera Preview Placeholder
-          Container(
-            width: double.infinity,
-            height: double.infinity,
-            color: Colors.black,
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.camera_alt_outlined,
-                    size: 80,
-                    color: Colors.white.withValues(alpha: 0.5),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Camera Preview',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.5),
-                      fontSize: 18,
+          // Camera Preview
+          if (_image != null)
+            Image.file(
+              _image!,
+              fit: BoxFit.cover,
+              width: double.infinity,
+              height: double.infinity,
+            )
+          else
+            Container(
+              width: double.infinity,
+              height: double.infinity,
+              color: Colors.black,
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.camera_alt_outlined,
+                      size: 80,
+                      color: Colors.white.withAlpha(128),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 16),
+                    Text(
+                      'Camera Preview',
+                      style: TextStyle(
+                        color: Colors.white.withAlpha(128),
+                        fontSize: 18,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
 
           // Scanning Overlay
           if (_isScanning)
             Container(
-              color: Colors.black.withValues(alpha: 0.7),
+              color: Colors.black.withAlpha(179),
               child: const Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -104,7 +133,7 @@ class _PersonaFitScannerScreenState extends State<PersonaFitScannerScreen> {
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
+                      color: Colors.black.withAlpha(51),
                       blurRadius: 10,
                       offset: const Offset(0, -5),
                     ),
@@ -120,7 +149,7 @@ class _PersonaFitScannerScreenState extends State<PersonaFitScannerScreen> {
                       height: 120,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: const Color(0xFFFF6B9D).withValues(alpha: 0.1),
+                        color: const Color(0xFFFF6B9D).withAlpha(26),
                       ),
                       child: Center(
                         child: Column(
@@ -181,7 +210,10 @@ class _PersonaFitScannerScreenState extends State<PersonaFitScannerScreen> {
                         Expanded(
                           child: OutlinedButton(
                             onPressed: () {
-                              setState(() => _scanResult = null);
+                              setState(() {
+                                _scanResult = null;
+                                _image = null;
+                              });
                             },
                             child: const Text('Scan Again'),
                           ),
