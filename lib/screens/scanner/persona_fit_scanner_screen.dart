@@ -55,13 +55,13 @@ class _PersonaFitScannerScreenState extends State<PersonaFitScannerScreen> {
                   Icon(
                     Icons.camera_alt_outlined,
                     size: 80,
-                    color: Colors.white.withAlpha(128),
+                    color: Colors.white.withValues(alpha: 0.5),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'Camera Preview',
                     style: TextStyle(
-                      color: Colors.white.withAlpha(128),
+                      color: Colors.white.withValues(alpha: 0.5),
                       fontSize: 18,
                     ),
                   ),
@@ -73,7 +73,7 @@ class _PersonaFitScannerScreenState extends State<PersonaFitScannerScreen> {
           // Scanning Overlay
           if (_isScanning)
             Container(
-              color: Colors.black.withAlpha(179),
+              color: Colors.black.withValues(alpha: 0.7),
               child: const Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -104,7 +104,7 @@ class _PersonaFitScannerScreenState extends State<PersonaFitScannerScreen> {
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withAlpha(51),
+                      color: Colors.black.withValues(alpha: 0.2),
                       blurRadius: 10,
                       offset: const Offset(0, -5),
                     ),
@@ -120,7 +120,7 @@ class _PersonaFitScannerScreenState extends State<PersonaFitScannerScreen> {
                       height: 120,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: const Color(0xFFFF6B9D).withAlpha(26),
+                        color: const Color(0xFFFF6B9D).withValues(alpha: 0.1),
                       ),
                       child: Center(
                         child: Column(
