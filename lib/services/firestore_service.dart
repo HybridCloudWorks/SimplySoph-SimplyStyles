@@ -1,17 +1,30 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+
 import '../models/clothing_item.dart';
 import '../models/style_persona.dart';
+import 'email_service.dart';
 
 class FirestoreService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseFirestore _firestore;
+  final EmailService _emailService;
+
+  FirestoreService({FirebaseFirestore? firestore, EmailService? emailService})
+      : _firestore = firestore ?? FirebaseFirestore.instance,
+        _emailService = emailService ??
+            EmailService(firestore: firestore ?? FirebaseFirestore.instance);
+
+  FirebaseFirestore get firestore => _firestore;
 
   // Wardrobe Items
-  Future<void> addClothingItem(ClothingItem item) async {
-    await _firestore.collection('wardrobe_items').add(item.toFirestore());
+  Future<String> addClothingItem(ClothingItem item) async {
+    final docRef =
+        await _firestore.collection('wardrobe_items').add(item.toFirestore());
+    return docRef.id;
   }
 
-  Future<void> updateClothingItem(String itemId, Map<String, dynamic> updates) async {
+  Future<void> updateClothingItem(
+      String itemId, Map<String, dynamic> updates) async {
     updates['updatedAt'] = FieldValue.serverTimestamp();
     await _firestore.collection('wardrobe_items').doc(itemId).update(updates);
   }
@@ -26,12 +39,14 @@ class FirestoreService {
         .where('userId', isEqualTo: userId)
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snapshot) =>
-            snapshot.docs.map((doc) => ClothingItem.fromFirestore(doc)).toList());
+        .map((snapshot) => snapshot.docs
+            .map((doc) => ClothingItem.fromFirestore(doc))
+            .toList());
   }
 
   Future<ClothingItem?> getClothingItem(String itemId) async {
-    DocumentSnapshot doc = await _firestore.collection('wardrobe_items').doc(itemId).get();
+    DocumentSnapshot doc =
+        await _firestore.collection('wardrobe_items').doc(itemId).get();
     if (doc.exists) {
       return ClothingItem.fromFirestore(doc);
     }
@@ -43,9 +58,13 @@ class FirestoreService {
     await _firestore.collection('style_personas').add(persona.toFirestore());
   }
 
-  Future<void> updateStylePersona(String personaId, Map<String, dynamic> updates) async {
+  Future<void> updateStylePersona(
+      String personaId, Map<String, dynamic> updates) async {
     updates['updatedAt'] = FieldValue.serverTimestamp();
-    await _firestore.collection('style_personas').doc(personaId).update(updates);
+    await _firestore
+        .collection('style_personas')
+        .doc(personaId)
+        .update(updates);
   }
 
   Future<void> deleteStylePersona(String personaId) async {
@@ -58,12 +77,14 @@ class FirestoreService {
         .where('userId', isEqualTo: userId)
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snapshot) =>
-            snapshot.docs.map((doc) => StylePersona.fromFirestore(doc)).toList());
+        .map((snapshot) => snapshot.docs
+            .map((doc) => StylePersona.fromFirestore(doc))
+            .toList());
   }
 
   Future<StylePersona?> getStylePersona(String personaId) async {
-    DocumentSnapshot doc = await _firestore.collection('style_personas').doc(personaId).get();
+    DocumentSnapshot doc =
+        await _firestore.collection('style_personas').doc(personaId).get();
     if (doc.exists) {
       return StylePersona.fromFirestore(doc);
     }
@@ -72,14 +93,16 @@ class FirestoreService {
 
   // User Profile
   Future<Map<String, dynamic>?> getUserProfile(String userId) async {
-    DocumentSnapshot doc = await _firestore.collection('users').doc(userId).get();
+    DocumentSnapshot doc =
+        await _firestore.collection('users').doc(userId).get();
     if (doc.exists) {
       return doc.data() as Map<String, dynamic>;
     }
     return null;
   }
 
-  Future<void> updateUserProfile(String userId, Map<String, dynamic> updates) async {
+  Future<void> updateUserProfile(
+      String userId, Map<String, dynamic> updates) async {
     await _firestore.collection('users').doc(userId).update(updates);
   }
 
@@ -91,20 +114,24 @@ class FirestoreService {
     required List<String> colors,
   }) async {
     try {
-      // We use 'update' here because we're adding fields to an
-      // existing user document that was created at sign-up.
       await _firestore.collection('users').doc(uid).update({
         'stylePreference': style,
         'favoriteColors': colors,
-        // ... (add any other fields you collected)
-        
-        // This is the magic flag our AuthWrapper is listening for!
-        'onboardingComplete': true, 
+        'onboardingComplete': true,
       });
+
+      // Send onboarding complete email
+      final userDoc = await _firestore.collection('users').doc(uid).get();
+      final userData = userDoc.data();
+      if (userData != null) {
+        await _emailService.sendOnboardingCompleteEmail(
+          userData['email'] ?? '',
+          userData['displayName'] ?? 'User',
+        );
+      }
     } catch (e) {
-      // Handle errors
       debugPrint('Error saving onboarding data: $e');
-      rethrow; // Re-throw the error so the UI can catch it
+      rethrow;
     }
   }
 }

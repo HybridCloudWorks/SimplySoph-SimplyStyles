@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:simplystyles/auth/auth_service.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('AuthService', () {
     // Mocks
     late MockFirebaseAuth mockAuth;
@@ -19,10 +21,11 @@ void main() {
       authService = AuthService(auth: mockAuth, firestore: fakeFirestore);
     });
 
-    test('signUp should create a user and a corresponding firestore document', () async {
+    test('signUp should create a user and a corresponding firestore document',
+        () async {
       // Arrange
       const email = 'test@example.com';
-      const password = 'password123';
+      const password = '123456';
       const displayName = 'Test User';
 
       // Act
@@ -37,7 +40,10 @@ void main() {
       expect(mockAuth.currentUser!.email, email);
       expect(mockAuth.currentUser!.displayName, displayName);
 
-      final userDoc = await fakeFirestore.collection('users').doc(mockAuth.currentUser!.uid).get();
+      final userDoc = await fakeFirestore
+          .collection('users')
+          .doc(mockAuth.currentUser!.uid)
+          .get();
       expect(userDoc.exists, isTrue);
       expect(userDoc.data()?['email'], email);
     });
@@ -45,7 +51,7 @@ void main() {
     test('signIn should log in an existing user', () async {
       // --- ARRANGE ---
       const email = 'test@example.com';
-      const password = 'password123';
+      const password = '123456';
 
       // Manually create the user in the FAKE auth system first
       await mockAuth.createUserWithEmailAndPassword(
@@ -71,7 +77,7 @@ void main() {
       // Start in a "logged-in" state.
       await mockAuth.signInWithEmailAndPassword(
         email: 'test@example.com',
-        password: 'password123',
+        password: '123456',
       );
       expect(mockAuth.currentUser, isNotNull);
 

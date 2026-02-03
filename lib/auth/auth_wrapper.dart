@@ -7,11 +7,50 @@ import 'package:simplystyles/screens/home/home_screen.dart';
 import 'package:simplystyles/screens/onboarding/onboarding_screen.dart';
 import 'package:simplystyles/services/database_service.dart';
 
-class AuthWrapper extends StatelessWidget {
+class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
 
   @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  bool _isInitializing = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeAuth();
+  }
+
+  Future<void> _initializeAuth() async {
+    final authService = Provider.of<AuthService>(context, listen: false);
+
+    // Wait for auth to be ready
+    await authService.initializeAuth();
+
+    if (mounted) {
+      setState(() => _isInitializing = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_isInitializing) {
+      return const Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Initializing...'),
+            ],
+          ),
+        ),
+      );
+    }
+
     final authService = Provider.of<AuthService>(context);
     final databaseService = Provider.of<DatabaseService>(context);
     final currentUser = authService.currentUser;
@@ -39,14 +78,15 @@ class AuthWrapper extends StatelessWidget {
           }
 
           if (!snapshot.hasData || !snapshot.data!.exists) {
-            // This case can happen if the user is authenticated but the document
-            // hasn't been created yet. You might want to show a loading screen
-            // or even log them out.
-            return const Scaffold(
-              body: Center(
-                child: Text('User data not found. Please try again.'),
-              ),
-            );
+            // User authenticated but no document - create it and go to onboarding
+            databaseService.createUserDocument(currentUser.uid, {
+              'email': currentUser.email,
+              'displayName': currentUser.displayName,
+              'photoURL': currentUser.photoURL,
+              'onboardingComplete': false,
+              'preferences': {},
+            });
+            return const OnboardingScreen();
           }
 
           final userData = snapshot.data!.data();

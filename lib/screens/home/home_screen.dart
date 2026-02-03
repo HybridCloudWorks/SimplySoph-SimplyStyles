@@ -1,9 +1,14 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../auth/auth_service.dart';
+import '../../services/wardrobe_service.dart';
+import '../closet/outfit_builder_screen.dart';
 import '../closet/smart_closet_screen.dart';
+import '../integrations/integrations_screen.dart';
+import '../scanner/add_item_screen.dart';
 import '../scanner/persona_fit_scanner_screen.dart';
-import '../trends/trend_wall_screen.dart';
 import '../shop/recommendations_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -15,14 +20,23 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+  late final List<Widget> _screens;
 
-  final List<Widget> _screens = [
-    const DashboardTab(),
-    const SmartClosetScreen(),
-    const PersonaFitScannerScreen(),
-    const TrendWallScreen(),
-    const RecommendationsScreen(),
-  ];
+  void _navigateToCloset() {
+    setState(() => _selectedIndex = 1);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _screens = [
+      DashboardTab(onNavigateToCloset: _navigateToCloset),
+      const SmartClosetScreen(),
+      const PersonaFitScannerScreen(),
+      const OutfitBuilderScreen(),
+      const RecommendationsScreen(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,9 +64,9 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Scan',
           ),
           NavigationDestination(
-            icon: Icon(Icons.trending_up_outlined),
-            selectedIcon: Icon(Icons.trending_up),
-            label: 'Trends',
+            icon: Icon(Icons.auto_awesome_outlined),
+            selectedIcon: Icon(Icons.auto_awesome),
+            label: 'Outfits',
           ),
           NavigationDestination(
             icon: Icon(Icons.shopping_bag_outlined),
@@ -65,8 +79,64 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class DashboardTab extends StatelessWidget {
-  const DashboardTab({super.key});
+class DashboardTab extends StatefulWidget {
+  final VoidCallback? onNavigateToCloset;
+
+  const DashboardTab({super.key, this.onNavigateToCloset});
+
+  @override
+  State<DashboardTab> createState() => _DashboardTabState();
+}
+
+class _DashboardTabState extends State<DashboardTab> {
+  int _itemCount = 0;
+  bool _isLoadingCount = true;
+
+  @override
+  void initState() {
+    super.initState();
+    // Delay loading to ensure Firebase is fully initialized
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadItemCount();
+    });
+  }
+
+  Future<void> _loadItemCount() async {
+    try {
+      // Check if Firebase is initialized (skip in test environments)
+      if (Firebase.apps.isEmpty) {
+        debugPrint('Firebase not initialized, skipping item count load');
+        if (mounted) {
+          setState(() => _isLoadingCount = false);
+        }
+        return;
+      }
+
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final wardrobeService =
+          Provider.of<WardrobeService>(context, listen: false);
+      final userId = authService.currentUser?.uid;
+
+      if (userId != null) {
+        final count = await wardrobeService.getItemCount(userId);
+        if (mounted) {
+          setState(() {
+            _itemCount = count;
+            _isLoadingCount = false;
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() => _isLoadingCount = false);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error loading item count: $e');
+      if (mounted) {
+        setState(() => _isLoadingCount = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -107,18 +177,21 @@ class DashboardTab extends StatelessWidget {
             const SizedBox(height: 24),
 
             // Quick Stats
-            const Row(
+            Row(
               children: [
                 Expanded(
-                  child: _StatCard(
-                    icon: Icons.checkroom,
-                    label: 'Items',
-                    value: '0',
-                    color: Colors.pink,
+                  child: GestureDetector(
+                    onTap: widget.onNavigateToCloset,
+                    child: _StatCard(
+                      icon: Icons.checkroom,
+                      label: 'Items',
+                      value: _isLoadingCount ? '...' : _itemCount.toString(),
+                      color: Colors.pink,
+                    ),
                   ),
                 ),
-                SizedBox(width: 12),
-                Expanded(
+                const SizedBox(width: 12),
+                const Expanded(
                   child: _StatCard(
                     icon: Icons.person_outline,
                     label: 'Personas',
@@ -174,7 +247,11 @@ class DashboardTab extends StatelessWidget {
               subtitle: 'Add to your wardrobe',
               color: const Color(0xFFFF6B9D),
               onTap: () {
-                // Navigate to scanner
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => AddItemScreen()),
+                ).then(
+                    (_) => _loadItemCount()); // Refresh count after adding item
               },
             ),
             const SizedBox(height: 12),
@@ -184,7 +261,23 @@ class DashboardTab extends StatelessWidget {
               subtitle: 'See what\'s trending',
               color: const Color(0xFF9C27B0),
               onTap: () {
-                // Navigate to trends
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const IntegrationsScreen()),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+            _QuickActionCard(
+              icon: Icons.api,
+              title: 'External Tools',
+              subtitle: 'Vision AI, Shein, Zappos',
+              color: Colors.blue,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const IntegrationsScreen()),
+                );
               },
             ),
           ],
@@ -264,7 +357,7 @@ class _QuickActionCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: color.withAlpha(26),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: color, size: 28),

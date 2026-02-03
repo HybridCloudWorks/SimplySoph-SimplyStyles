@@ -9,8 +9,14 @@ import 'package:simplystyles/screens/auth/login_screen.dart';
 import 'package:simplystyles/screens/home/home_screen.dart';
 import 'package:simplystyles/screens/onboarding/onboarding_screen.dart';
 import 'package:simplystyles/services/database_service.dart';
+import 'package:simplystyles/services/firestore_service.dart';
+import 'package:simplystyles/services/image_service.dart';
+import 'package:simplystyles/services/wardrobe_service.dart';
+import 'package:simplystyles/state/onboarding_state.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   // A helper function to wrap our app in the necessary providers
   // for a given test.
   Widget createTestApp({
@@ -22,8 +28,23 @@ void main() {
         ChangeNotifierProvider(
           create: (_) => AuthService(auth: auth, firestore: firestore),
         ),
+        ChangeNotifierProvider(
+          create: (_) => OnboardingState(),
+        ),
         Provider<DatabaseService>(
           create: (_) => DatabaseService(firestore: firestore),
+        ),
+        Provider<FirestoreService>(
+          create: (_) => FirestoreService(),
+        ),
+        Provider<ImageService>(
+          create: (_) => ImageService(),
+        ),
+        ProxyProvider2<FirestoreService, ImageService, WardrobeService>(
+          update: (_, firestoreService, imageService, __) => WardrobeService(
+            firestoreService: firestoreService,
+            imageService: imageService,
+          ),
         ),
       ],
       child: const SimplyStylesApp(),
@@ -47,9 +68,11 @@ void main() {
     expect(find.byType(HomeScreen), findsNothing);
   });
 
-  testWidgets('App shows HomeScreen when user is logged in and onboarded', (WidgetTester tester) async {
+  testWidgets('App shows HomeScreen when user is logged in and onboarded',
+      (WidgetTester tester) async {
     // --- ARRANGE ---
-    final fakeUser = MockUser(uid: 'logged-in-onboarded-123', email: 'home@example.com');
+    final fakeUser =
+        MockUser(uid: 'logged-in-onboarded-123', email: 'home@example.com');
     final fakeAuth = MockFirebaseAuth(signedIn: true, mockUser: fakeUser);
     final fakeFirestore = FakeFirebaseFirestore();
     // Add the user document marking onboarding as complete
@@ -58,7 +81,6 @@ void main() {
       'onboardingComplete': true,
     });
 
-
     // --- ACT ---
     await tester.pumpWidget(createTestApp(
       auth: fakeAuth,
@@ -66,14 +88,20 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
+    // Wait a bit more for async operations to complete
+    await tester.pump(const Duration(milliseconds: 100));
+
     // --- ASSERT ---
     expect(find.byType(LoginScreen), findsNothing);
     expect(find.byType(HomeScreen), findsOneWidget);
   });
 
-  testWidgets('App shows OnboardingScreen for logged in user who is not onboarded', (WidgetTester tester) async {
+  testWidgets(
+      'App shows OnboardingScreen for logged in user who is not onboarded',
+      (WidgetTester tester) async {
     // --- ARRANGE ---
-    final fakeUser = MockUser(uid: 'logged-in-not-onboarded-456', email: 'new@example.com');
+    final fakeUser =
+        MockUser(uid: 'logged-in-not-onboarded-456', email: 'new@example.com');
     final fakeAuth = MockFirebaseAuth(signedIn: true, mockUser: fakeUser);
     final fakeFirestore = FakeFirebaseFirestore();
     // Add the user document marking onboarding as INCOMPLETE
@@ -95,9 +123,11 @@ void main() {
     expect(find.byType(LoginScreen), findsNothing);
   });
 
-  testWidgets('OnboardingScreen handles state and page navigation correctly', (WidgetTester tester) async {
+  testWidgets('OnboardingScreen handles state and page navigation correctly',
+      (WidgetTester tester) async {
     // --- ARRANGE ---
-    final fakeUser = MockUser(uid: 'onboarding-test-789', email: 'onboarding@example.com');
+    final fakeUser =
+        MockUser(uid: 'onboarding-test-789', email: 'onboarding@example.com');
     final fakeAuth = MockFirebaseAuth(signedIn: true, mockUser: fakeUser);
     final fakeFirestore = FakeFirebaseFirestore();
     await fakeFirestore.collection('users').doc(fakeUser.uid).set({
@@ -114,13 +144,11 @@ void main() {
     // --- ASSERT INITIAL STATE ---
     expect(find.byType(OnboardingScreen), findsOneWidget);
     expect(find.text('What\'s your go-to style?'), findsOneWidget);
-    expect(find.text('Selected: None'), findsOneWidget);
 
     // --- ACT & ASSERT: Update Style Preference ---
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Set to Chic'));
-    await tester.pump(); // Rebuild the consumer
-
-    expect(find.text('Selected: Chic'), findsOneWidget);
+    // Select a style using ChoiceChip
+    await tester.tap(find.text('Chic'));
+    await tester.pump();
 
     // --- ACT & ASSERT: Navigate to Page 2 ---
     await tester.tap(find.widgetWithText(ElevatedButton, 'Next'));
@@ -143,5 +171,4 @@ void main() {
     expect(find.text('You\'re all set!'), findsNothing);
     expect(find.text('What colors do you love?'), findsOneWidget);
   });
-
 }

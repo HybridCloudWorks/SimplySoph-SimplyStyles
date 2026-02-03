@@ -16,4 +16,9 @@ class DatabaseService {
       'onboardingComplete': true,
     });
   }
+
+  /// Creates a user document if it doesn't exist
+  Future<void> createUserDocument(String uid, Map<String, dynamic> data) {
+    return _firestore.collection('users').doc(uid).set(data, SetOptions(merge: true));
+  }
 }

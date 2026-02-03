@@ -1,44 +1,183 @@
-# SimplyStyles - Your AI-Powered Wardrobe Assistant
+# SimplyStyles ✨
 
-## About The Project
+> **AI-Powered Wardrobe Assistant for Gen-Z Fashion Creators**
 
-SimplyStyles is a Flutter-based mobile application designed to revolutionize how users interact with their wardrobe. It acts as a personal stylist in your pocket, leveraging the power of AI to provide personalized outfit recommendations, help organize your closet, and assist you in discovering new styles tailored to your unique preferences.
+[![CI/CD](https://github.com/saulpatinojr/SimplySoph-SimplyStyles/actions/workflows/firebase-hosting-deploy.yml/badge.svg)](https://github.com/saulpatinojr/SimplySoph-SimplyStyles/actions/workflows/firebase-hosting-deploy.yml)
+[![Firebase Hosting](https://img.shields.io/badge/Firebase-Hosting-orange?logo=firebase)](https://simplysoph-66c78.web.app)
+[![Flutter](https://img.shields.io/badge/Flutter-3.0+-blue?logo=flutter)](https://flutter.dev)
+[![License](https://img.shields.io/badge/License-Proprietary-red)]()
 
-The core mission is to make fashion simple, accessible, and fun for everyone, removing the daily "what to wear" dilemma.
+## 🎯 What is SimplyStyles?
 
-## Current Progress & Implemented Features
+SimplyStyles is a **Flutter-based fashion app** designed for content creators and fashion enthusiasts aged 15-25. Upload photos of your clothes, and our AI analyzes them to:
 
-As of now, the foundational structure of the application is in place, focusing on user authentication and the initial onboarding pipeline.
+- 🧥 **Organize your digital closet** with smart categorization
+- 👗 **Generate style personas** based on your wardrobe patterns  
+- 💡 **Recommend outfits** from your existing clothes
+- 🛍️ **Discover new pieces** that match your style
 
-### Core Architecture
+**Live Demo**: [simplysoph-66c78.web.app](https://simplysoph-66c78.web.app)
 
-*   **Firebase Integration**: The project is fully integrated with Firebase for backend services.
-*   **Authentication**: User sign-up and login functionality are implemented using **Firebase Authentication**. A dedicated `AuthService` handles all authentication-related logic, providing a clean interface for the UI.
-*   **Database**: **Cloud Firestore** is used as the database. A `DatabaseService` is set up to manage all interactions with Firestore, such as fetching and updating user data.
-*   **State Management**: The app uses the `provider` package for state management, allowing for a clean separation of concerns between the UI and the application logic.
+---
 
-### User Flow & Navigation
+## 📱 Features
 
-The application features a robust "gatekeeper" widget (`AuthWrapper`) that directs users to the appropriate screen based on their authentication and onboarding status:
+### ✅ Implemented
+| Feature | Description |
+|---------|-------------|
+| **Authentication** | Google Sign-In, Apple Sign-In, Email/Password |
+| **Digital Closet** | Upload & organize clothing items with AI tagging |
+| **AI Analysis** | Gemini-powered clothing detection (category, color, brand) |
+| **Style Personas** | Auto-generated style profiles from wardrobe (5+ items) |
+| **Onboarding Quiz** | Style preference & color selection |
+| **Cloud Functions** | 8 serverless AI functions including Vision AI |
 
-1.  **Logged Out Users**: Are directed to the `LoginScreen`.
-2.  **Logged In, Not Onboarded Users**: Are directed to the `OnboardingScreen`. This is where they will input their style preferences.
-3.  **Logged In, Onboarded Users**: Are taken directly to the `HomeScreen` (placeholder).
+### 🚧 In Development
+| Feature | Status | Issue |
+|---------|--------|-------|
+| Social Sharing | Not started | [#7](../../issues/7) |
+| Profile/Settings | Not started | [#12](../../issues/12) |
+| Dark Mode | Planned | [#17](../../issues/17) |
+| Real Product Recommendations | Needs API keys | [#3](../../issues/3), [#5](../../issues/5) |
 
-This routing is handled reactively by streaming user data from Firestore, ensuring the UI always reflects the user's current state.
+### 🐛 Known Issues
+See our [Issues page](../../issues) for the full list. Key issues:
+- **AI Integrations**: Shein/Zappos APIs need configuration ([#3](../../issues/3))
+- **Mock Data**: Shop recommendations show placeholders ([#5](../../issues/5))
+- **Navigation**: 5-tab structure needs redesign ([#9](../../issues/9))
 
-### Testing
+---
 
-The project includes a suite of widget tests to guarantee the reliability of the core authentication and navigation flow. These tests use `firebase_auth_mocks` and `fake_cloud_firestore` to simulate Firebase services, ensuring that:
-*   Logged-out users see the `LoginScreen`.
-*   Logged-in and fully onboarded users see the `HomeScreen`.
-*   Logged-in users who have not completed the new user quiz are correctly shown the `OnboardingScreen`.
+## 🛠 Technology Stack
 
-## Technology Stack
+| Layer | Technology |
+|-------|------------|
+| **Frontend** | Flutter 3.0+, Material 3 |
+| **State Management** | Provider |
+| **Backend** | Firebase (Auth, Firestore, Storage, Functions) |
+| **AI/ML** | Google Gemini 1.5 Flash, Google Cloud Vision |
+| **External APIs** | RapidAPI (Shein, Zappos), Google Trends |
+| **CI/CD** | GitHub Actions → Firebase Hosting |
 
-*   **Framework**: Flutter
-*   **Backend**: Firebase
-    *   Firebase Authentication
-    *   Cloud Firestore
-*   **State Management**: `provider`
-*   **Testing**: `flutter_test`, `firebase_auth_mocks`, `fake_cloud_firestore`
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Flutter SDK 3.0+
+- Firebase CLI
+- Node.js 18+ (for Cloud Functions)
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/saulpatinojr/SimplySoph-SimplyStyles.git
+cd SimplySoph-SimplyStyles
+
+# Install Flutter dependencies
+flutter pub get
+
+# Install Cloud Functions dependencies
+cd functions && npm install && cd ..
+
+# Run locally
+flutter run -d chrome
+```
+
+### Configuration Required
+
+1. **Firebase Project**: Already configured (simplysoph-66c78)
+2. **RapidAPI Key** (for Shein/Zappos):
+   ```bash
+   firebase functions:config:set rapidapi.key="YOUR_KEY"
+   ```
+3. **Deploy Functions**:
+   ```bash
+   firebase deploy --only functions
+   ```
+
+---
+
+## 📂 Project Structure
+
+```
+lib/
+├── auth/               # Authentication (AuthService, AuthWrapper)
+├── models/             # Data models (ClothingItem, StylePersona)
+├── screens/            # UI screens
+│   ├── auth/           # Login/Register
+│   ├── closet/         # Digital closet, item details
+│   ├── home/           # Dashboard
+│   ├── onboarding/     # Style quiz
+│   ├── scanner/        # Add item via camera
+│   └── shop/           # Recommendations
+├── services/           # Business logic (11 services)
+├── state/              # State management
+└── utils/              # Helpers
+
+functions/              # Firebase Cloud Functions (Node.js)
+docs/                   # Documentation
+test/                   # Widget & integration tests
+```
+
+---
+
+## 🧪 Testing
+
+```bash
+# Run all tests
+flutter test
+
+# Run with coverage
+flutter test --coverage
+```
+
+Test files:
+- `widget_test.dart` - Core widget tests
+- `auth_service_test.dart` - Authentication flow
+- `closet_upload_integration_test.dart` - Upload pipeline
+
+---
+
+## 📖 Documentation
+
+| Document | Description |
+|----------|-------------|
+| [Setup Guide](docs/Setup.md) | Environment setup |
+| [Architecture](docs/Architecture.md) | System design |
+| [AI Integration](docs/AI_INTEGRATION.md) | Vortex AI pipeline |
+| [Database Schema](docs/Database.md) | Firestore models |
+| [Deployment](docs/Deployment.md) | Deploy to production |
+| [CI/CD](docs/CI_CD.md) | GitHub Actions pipeline |
+| [Roadmap](docs/Roadmap.md) | Future features |
+
+---
+
+## 🤝 Contributing
+
+1. Check [open issues](../../issues) for available tasks
+2. Issues labeled `good first issue` are beginner-friendly
+3. Critical issues are labeled `critical` or `high-priority`
+
+### Priority Labels
+| Label | Meaning |
+|-------|---------|
+| `critical` | Blocks core functionality |
+| `high-priority` | Important for next release |
+| `enhancement` | New feature |
+| `bug` | Something broken |
+
+---
+
+## 📄 License
+
+Proprietary - All rights reserved.
+
+---
+
+## 👩‍💻 Author
+
+**SimplySoph** - Fashion content creator with 200k+ followers
+
+Built with ❤️ for the fashion community
