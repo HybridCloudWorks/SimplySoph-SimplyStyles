@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
 
 import '../api/gemini_cortex_api.dart';
 import '../models/style_persona.dart';
@@ -31,7 +30,6 @@ class PersonaService {
     } catch (e) {
       // In test environments or when API is not available, skip persona generation
       // This allows the app to function without Firebase Functions in tests
-      debugPrint('Persona generation skipped (likely in test environment): $e');
     }
   }
 
