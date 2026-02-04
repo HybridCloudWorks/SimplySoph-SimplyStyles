@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../auth/auth_service.dart';
+import '../../services/gamification_service.dart';
+import '../../services/social_service.dart';
 import '../../services/wardrobe_service.dart';
 import '../closet/outfit_builder_screen.dart';
 import '../closet/smart_closet_screen.dart';
@@ -90,57 +92,52 @@ class DashboardTab extends StatefulWidget {
 
 class _DashboardTabState extends State<DashboardTab> {
   int _itemCount = 0;
-  bool _isLoadingCount = true;
+  int _pointsCount = 0;
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    // Delay loading to ensure Firebase is fully initialized
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadItemCount();
+      _loadData();
     });
   }
 
-  Future<void> _loadItemCount() async {
+  Future<void> _loadData() async {
     try {
-      // Check if Firebase is initialized (skip in test environments)
       if (Firebase.apps.isEmpty) {
-        debugPrint('Firebase not initialized, skipping item count load');
-        if (mounted) {
-          setState(() => _isLoadingCount = false);
-        }
+        if (mounted) setState(() => _isLoading = false);
         return;
       }
 
       final authService = Provider.of<AuthService>(context, listen: false);
-      final wardrobeService =
-          Provider.of<WardrobeService>(context, listen: false);
+      final wardrobeService = Provider.of<WardrobeService>(context, listen: false);
+      final gamificationService = Provider.of<GamificationService>(context, listen: false);
       final userId = authService.currentUser?.uid;
 
       if (userId != null) {
         final count = await wardrobeService.getItemCount(userId);
+        final points = await gamificationService.getPoints(userId);
         if (mounted) {
           setState(() {
             _itemCount = count;
-            _isLoadingCount = false;
+            _pointsCount = points;
+            _isLoading = false;
           });
         }
       } else {
-        if (mounted) {
-          setState(() => _isLoadingCount = false);
-        }
+        if (mounted) setState(() => _isLoading = false);
       }
     } catch (e) {
-      debugPrint('Error loading item count: $e');
-      if (mounted) {
-        setState(() => _isLoadingCount = false);
-      }
+      debugPrint('Error loading dashboard data: $e');
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
+    final socialService = Provider.of<SocialService>(context);
     final user = authService.currentUser;
 
     return Scaffold(
@@ -148,10 +145,21 @@ class _DashboardTabState extends State<DashboardTab> {
         title: const Text('SimplyStyles'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings_outlined),
+            icon: const Icon(Icons.share_outlined),
             onPressed: () {
-              // Navigate to settings
+              showDialog(
+                context: context,
+                builder: (context) => _ShareDialog(
+                  itemCount: _itemCount,
+                  pointsCount: _pointsCount,
+                  socialService: socialService,
+                ),
+              );
             },
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () {},
           ),
         ],
       ),
@@ -160,7 +168,6 @@ class _DashboardTabState extends State<DashboardTab> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Welcome Section
             Text(
               'Welcome back, ${user?.displayName ?? 'Fashionista'}!',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -185,25 +192,23 @@ class _DashboardTabState extends State<DashboardTab> {
                     child: _StatCard(
                       icon: Icons.checkroom,
                       label: 'Items',
-                      value: _isLoadingCount ? '...' : _itemCount.toString(),
+                      value: _isLoading ? '...' : _itemCount.toString(),
                       color: Colors.pink,
                     ),
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: _StatCard(
-                    icon: Icons.person_outline,
-                    label: 'Personas',
-                    value: '0',
-                    color: Colors.purple,
+                    icon: Icons.star_border,
+                    label: 'Points',
+                    value: _isLoading ? '...' : _pointsCount.toString(),
+                    color: Colors.amber,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 24),
-
-            // Style Personas Section
             Text(
               'Your Style Personas',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -250,8 +255,7 @@ class _DashboardTabState extends State<DashboardTab> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const AddItemScreen()),
-                ).then(
-                    (_) => _loadItemCount()); // Refresh count after adding item
+                ).then((_) => _loadData());
               },
             ),
             const SizedBox(height: 12),
@@ -260,19 +264,6 @@ class _DashboardTabState extends State<DashboardTab> {
               title: 'Explore Trends',
               subtitle: 'See what\'s trending',
               color: const Color(0xFF9C27B0),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const IntegrationsScreen()),
-                );
-              },
-            ),
-            const SizedBox(height: 12),
-            _QuickActionCard(
-              icon: Icons.api,
-              title: 'External Tools',
-              subtitle: 'Vision AI, Shein, Zappos',
-              color: Colors.blue,
               onTap: () {
                 Navigator.push(
                   context,
@@ -357,7 +348,7 @@ class _QuickActionCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
+                  color: color.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: color, size: 28),
@@ -387,6 +378,41 @@ class _QuickActionCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _ShareDialog extends StatelessWidget {
+  final int itemCount;
+  final int pointsCount;
+  final SocialService socialService;
+
+  const _ShareDialog({
+    required this.itemCount,
+    required this.pointsCount,
+    required this.socialService,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final shareText = 'Check out my progress on SimplyStyles! I have $itemCount items and $pointsCount points!';
+
+    return AlertDialog(
+      title: const Text('Share Your Progress'),
+      content: Text(shareText),
+      actions: [
+        TextButton(
+          child: const Text('Cancel'),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        ElevatedButton(
+          child: const Text('Share'),
+          onPressed: () {
+            socialService.share(shareText);
+            Navigator.of(context).pop();
+          },
+        ),
+      ],
     );
   }
 }

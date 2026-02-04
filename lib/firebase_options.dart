@@ -52,7 +52,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyBzq_xSLOrF-7TjpcxHI4AqeKlY9n9cB8k',
-    appId: '1:424903425639:android:5b0076dc1057e53bbd9ec2',
+    appId: '1:424903425639:android:f2cef21ff9b08510bd9ec2',
     messagingSenderId: '424903425639',
     projectId: 'simplysoph-66c78',
     storageBucket: 'simplysoph-66c78.firebasestorage.app',
@@ -60,11 +60,12 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyCUuDcQs5FuYPy_N_52izA2DZhrnySdhXE',
-    appId: '1:424903425639:ios:daf2d02dd03083e8bd9ec2',
+    appId: '1:424903425639:ios:730d5ef90ed0bb25bd9ec2',
     messagingSenderId: '424903425639',
     projectId: 'simplysoph-66c78',
     storageBucket: 'simplysoph-66c78.firebasestorage.app',
-    iosBundleId: 'com.ssapple.app',
+    iosClientId: '424903425639-2rgqjt85p206bu2aatb821l6ig4vkg67.apps.googleusercontent.com',
+    iosBundleId: 'com.simplysoph.simplystyles',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(

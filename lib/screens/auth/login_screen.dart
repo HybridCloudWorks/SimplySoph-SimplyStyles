@@ -4,8 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../auth/auth_service.dart';
-import '../../utils/web_view_detector_stub.dart'
-    if (dart.library.html) '../../utils/web_view_detector.dart';
 import 'signup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -21,7 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _rememberMe = true; // Default to remembering users
-  String? _googleErrorCode;
+  Object? _googleErrorCode;
 
   @override
   void initState() {
@@ -75,7 +73,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (error != null && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error), backgroundColor: Colors.red),
+        SnackBar(content: Text(error.toString()), backgroundColor: Colors.red),
       );
     }
   }
@@ -85,23 +83,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
     final authService = Provider.of<AuthService>(context, listen: false);
 
-    // If running in embedded webview, skip popup and use redirect directly.
-    if (kIsWeb && isEmbeddedWebView()) {
-      // Trigger redirect flow in auth service (direct redirect)
-      await authService.signInWithRedirectForGoogle();
-      setState(() {
-        _isLoading = false;
-        _googleErrorCode = 'ERROR_POPUP_BLOCKED';
-      });
-      return;
-    }
-
     final error = await authService.signInWithGoogle();
 
     setState(() => _isLoading = false);
 
     if (error != null && mounted) {
-      if (error == 'ERROR_POPUP_BLOCKED') {
+      if (error is String && error == 'ERROR_POPUP_BLOCKED') {
         // Show a banner explaining popup blocked and that we'll use redirect.
         setState(() => _googleErrorCode = error);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -110,11 +97,9 @@ class _LoginScreenState extends State<LoginScreen> {
             backgroundColor: Colors.orange,
           ),
         );
-        // Trigger redirect flow automatically
-        await authService.signInWithRedirectForGoogle();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error), backgroundColor: Colors.red),
+          SnackBar(content: Text(error.toString()), backgroundColor: Colors.red),
         );
       }
     }
@@ -130,7 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (error != null && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error), backgroundColor: Colors.red),
+        SnackBar(content: Text(error.toString()), backgroundColor: Colors.red),
       );
     }
   }
@@ -153,7 +138,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       margin: const EdgeInsets.only(bottom: 12),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.orange.withValues(alpha: 26),
+                        color: Colors.orange.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(color: Colors.orange),
                       ),

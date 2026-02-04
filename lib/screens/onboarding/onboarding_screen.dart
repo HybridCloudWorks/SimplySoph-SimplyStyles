@@ -5,7 +5,7 @@ import 'package:simplystyles/services/firestore_service.dart';
 import 'package:simplystyles/state/onboarding_state.dart';
 import 'package:simplystyles/screens/onboarding/style_page.dart';
 import 'package:simplystyles/screens/onboarding/color_page.dart';
-import 'package:simplystyles/screens/onboarding/finish_page.dart';
+import 'package:simplystyles/screens/onboarding/pages/finish_page.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
