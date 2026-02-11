@@ -140,6 +140,7 @@ class ImageService {
           .delete();
     } catch (e) {
       debugPrint('Error deleting profile picture: $e');
+      // Ignore errors if profile picture doesn't exist
     }
   }
 
