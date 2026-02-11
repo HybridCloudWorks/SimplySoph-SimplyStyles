@@ -51,7 +51,7 @@ void main() {
           Provider<ImageService>.value(value: mockImageService),
           Provider<AuthService>.value(value: mockAuthService),
         ],
-        child: MaterialApp(
+        child: const MaterialApp(
           home: Scaffold(
             body: NetworkImageWithRetry(
               imageUrl: originalUrl,
