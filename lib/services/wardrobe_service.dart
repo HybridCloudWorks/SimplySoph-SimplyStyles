@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 import '../models/clothing_item.dart';
 import 'email_service.dart';
 import 'firestore_service.dart';
+import 'gamification_service.dart';
 import 'image_service.dart';
 import 'persona_service.dart';
 
@@ -20,17 +21,22 @@ const List<String> _validCategories = [
 class WardrobeService {
   final FirestoreService _firestoreService;
   final ImageService _imageService;
-  late final PersonaService _personaService;
+  final GamificationService _gamificationService;
+  final PersonaService _personaService;
+  final EmailService _emailService;
   final Uuid _uuid = const Uuid();
 
   WardrobeService({
     required FirestoreService firestoreService,
     required ImageService imageService,
+    required GamificationService gamificationService,
+    required PersonaService personaService,
+    required EmailService emailService,
   })  : _firestoreService = firestoreService,
-        _imageService = imageService {
-    // Initialize persona service with the same firestore instance
-    _personaService = PersonaService(firestoreService.firestore);
-  }
+        _imageService = imageService,
+        _gamificationService = gamificationService,
+        _personaService = personaService,
+        _emailService = emailService;
 
   /// Add a new clothing item (Platform agnostic, uses bytes)
   Future<String> addItem({
@@ -54,8 +60,6 @@ class WardrobeService {
 
     try {
       // 1. Create initial Firestore document with 'uploading' status
-      // This ensures the document exists before the Cloud Function triggers
-      // We explicitly set storageItemId here to avoid race conditions with the Cloud Function.
       final initialItem = ClothingItem(
         id: '',
         userId: userId,
@@ -80,9 +84,7 @@ class WardrobeService {
       final docRef = await _firestoreService.firestore.collection('wardrobe_items').add(initialItem.toFirestore());
       docId = docRef.id;
 
-      // 2. Upload image (using the pre-generated storageItemId)
-      // The document now exists with storageItemId, so the Cloud Function can safely
-      // find it when triggered by the upload.
+      // 2. Upload image
       final imageUrls = await _imageService.uploadClothingImage(
         userId: userId,
         imageBytes: imageBytes,
@@ -96,31 +98,34 @@ class WardrobeService {
         'status': 'analyzing',
       });
 
+      // 4. Award gamification points
+      await _gamificationService.awardPoints(userId, 10); // Award 10 points
+
       // Check if this is user's first item
       final itemCount = await getItemCount(userId);
       if (itemCount == 1) {
-        final emailService = EmailService();
         final userDoc = await FirebaseFirestore.instance
             .collection('users')
             .doc(userId)
             .get();
         final email = userDoc.data()?['email'] as String?;
         if (email != null) {
-          await emailService.sendFirstItemEmail(userId, email);
+          await _emailService.sendFirstItemEmail(userId, email);
+          await _gamificationService.awardBadge(userId, 'first_item'); // Award 'First Item' badge
         }
       }
 
-      // Check if we should generate personas (need 5+ items and no existing personas)
+      // Check if we should generate personas
       final personaCount = await _personaService.getPersonaCount(userId);
       if (itemCount >= 5 && personaCount == 0) {
         try {
-          // We can run this in background
           _personaService.generatePersonas(userId).then((_) {
              debugPrint('Style personas generated for user $userId');
           }).catchError((e) {
              debugPrint('Failed to generate personas: $e');
           });
-        } catch (e) {
+        }
+        catch (e) {
           debugPrint('Failed to trigger persona generation: $e');
         }
       }
@@ -141,6 +146,7 @@ class WardrobeService {
     }
   }
 
+  // ... (rest of the class is the same)
   /// Get all wardrobe items for a user
   Stream<List<ClothingItem>> getItems(String userId) {
     if (userId.isEmpty) throw ArgumentError('userId cannot be empty');

@@ -16,6 +16,10 @@ class FirestoreService {
 
   FirebaseFirestore get firestore => _firestore;
 
+  Future<void> createUserDocument(String userId, Map<String, dynamic> data) async {
+    await _firestore.collection('users').doc(userId).set(data);
+  }
+
   // Wardrobe Items
   Future<String> addClothingItem(ClothingItem item) async {
     final docRef =
