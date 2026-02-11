@@ -15,8 +15,8 @@ void main() {
       const itemId = 'abc-456';
       
       // Verify paths follow security rules pattern: users/{userId}/{allPaths=**}
-      final originalPath = 'users/$userId/wardrobe/original/$itemId.jpg';
-      final thumbnailPath = 'users/$userId/wardrobe/thumbnails/${itemId}_thumb.jpg';
+      const originalPath = 'users/$userId/wardrobe/original/$itemId.jpg';
+      const thumbnailPath = 'users/$userId/wardrobe/thumbnails/${itemId}_thumb.jpg';
       
       expect(originalPath, startsWith('users/$userId/'));
       expect(thumbnailPath, startsWith('users/$userId/'));
@@ -27,8 +27,8 @@ void main() {
     test('File size limits', () {
       const maxSize = 10 * 1024 * 1024; // 10MB as per storage.rules
       
-      final validSize = 5 * 1024 * 1024; // 5MB
-      final invalidSize = 15 * 1024 * 1024; // 15MB
+      const validSize = 5 * 1024 * 1024; // 5MB
+      const invalidSize = 15 * 1024 * 1024; // 15MB
       
       expect(validSize < maxSize, isTrue, reason: '5MB should be under 10MB limit');
       expect(invalidSize < maxSize, isFalse, reason: '15MB should exceed 10MB limit');

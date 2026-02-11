@@ -42,7 +42,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     if (error != null && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error), backgroundColor: Colors.red),
+        SnackBar(content: Text(error.toString()), backgroundColor: Colors.red),
       );
     } else if (mounted) {
       Navigator.pop(context);

@@ -65,7 +65,6 @@ class ImageService {
         'itemId': itemId,
       };
     } catch (e) {
-      debugPrint('Error uploading image bytes: $e');
       rethrow;
     }
   }
@@ -106,7 +105,6 @@ class ImageService {
           .ref('users/$userId/wardrobe/thumbnails/${storageItemId}_thumb.jpg')
           .delete();
     } catch (e) {
-      debugPrint('Error deleting image: $e');
       // Don't rethrow - image might not exist or already be deleted
     }
   }
@@ -151,7 +149,6 @@ class ImageService {
       // Check authentication
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser == null) {
-        debugPrint('User not authenticated, cannot get download URL');
         return null;
       }
 
@@ -162,7 +159,6 @@ class ImageService {
       final url = await ref.getDownloadURL();
       return url;
     } catch (e) {
-      debugPrint('Error getting download URL for $imagePath: $e');
       return null;
     }
   }

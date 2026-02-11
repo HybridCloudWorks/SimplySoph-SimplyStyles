@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "simplysoph-66c78"
-  }
+    "default": "simplysoph-66c78",
+    "simplystyles-67a00": "simplysoph-66c78"
+  },
+  "targets": {},
+  "etags": {}
 }
