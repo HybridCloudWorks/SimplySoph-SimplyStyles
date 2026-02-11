@@ -64,7 +64,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final authService = Provider.of<AuthService>(context, listen: false);
 
     // Persistence is automatically configured in AuthService
-    final error = await authService.signIn(
+    final String? error = await authService.signIn(
       email: _emailController.text.trim(),
       password: _passwordController.text,
     );
@@ -138,7 +138,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       margin: const EdgeInsets.only(bottom: 12),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.1),
+                        color: Colors.orange.withValues(alpha: 0.1), // Fixed alpha value (0.0-1.0)
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(color: Colors.orange),
                       ),

@@ -137,6 +137,8 @@ class ImageService {
           .ref('users/$userId/profile/avatar.jpg')
           .delete();
     } catch (e) {
+      debugPrint('Error deleting profile picture: $e');
+      // Ignore errors if profile picture doesn't exist
     }
   }
 
