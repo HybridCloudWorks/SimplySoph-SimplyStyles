@@ -7,7 +7,7 @@ on:
 jobs:
   preview:
     runs-on: ubuntu-latest
-    timeout-minutes: 10 # Preview builds shouldn't take forever
+    timeout-minutes: 5 # User requirement: max 5 mins
     steps:
       - uses: actions/checkout@v4
       

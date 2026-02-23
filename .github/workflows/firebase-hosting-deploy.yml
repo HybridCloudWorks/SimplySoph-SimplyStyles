@@ -36,7 +36,7 @@ jobs:
   build-web:
     needs: test
     runs-on: ubuntu-latest
-    timeout-minutes: 10 # Web builds can take a bit longer
+    timeout-minutes: 5 # User requirement: max 5 mins
     steps:
       - uses: actions/checkout@v4
       
@@ -61,7 +61,7 @@ jobs:
   build-android:
     needs: test
     runs-on: ubuntu-latest
-    timeout-minutes: 15 # Android builds are heavy
+    timeout-minutes: 5 # User requirement: max 5 mins
     steps:
       - uses: actions/checkout@v4
       
