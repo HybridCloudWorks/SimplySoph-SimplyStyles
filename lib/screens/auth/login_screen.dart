@@ -63,18 +63,30 @@ class _LoginScreenState extends State<LoginScreen> {
 
     final authService = Provider.of<AuthService>(context, listen: false);
 
-    // Persistence is automatically configured in AuthService
-    final String? error = await authService.signIn(
-      email: _emailController.text.trim(),
-      password: _passwordController.text,
-    );
-
-    setState(() => _isLoading = false);
-
-    if (error != null && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString()), backgroundColor: Colors.red),
+    try {
+      final user = await authService.signIn(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
       );
+
+      // If user is null but no exception, it might mean failure?
+      // AuthService throws on failure, so user shouldn't be null here if successful.
+      if (user == null) {
+        throw Exception('Login failed');
+      }
+
+      // Success logic (handled by auth state stream usually, or navigation)
+      // The current code doesn't navigate on success, relying on auth state change.
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -83,24 +95,33 @@ class _LoginScreenState extends State<LoginScreen> {
 
     final authService = Provider.of<AuthService>(context, listen: false);
 
-    final error = await authService.signInWithGoogle();
-
-    setState(() => _isLoading = false);
-
-    if (error != null && mounted) {
-      if (error is String && error == 'ERROR_POPUP_BLOCKED') {
-        // Show a banner explaining popup blocked and that we'll use redirect.
-        setState(() => _googleErrorCode = error);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Popup blocked — falling back to redirect sign-in.'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error.toString()), backgroundColor: Colors.red),
-        );
+    try {
+      final user = await authService.signInWithGoogle();
+      if (user == null) {
+        // User cancelled, maybe don't show error?
+        // Or handle specific cancellation error
+      }
+    } catch (e) {
+      final errorString = e.toString();
+      if (mounted) {
+        if (errorString.contains('ERROR_POPUP_BLOCKED')) {
+          // Show a banner explaining popup blocked and that we'll use redirect.
+          setState(() => _googleErrorCode = 'ERROR_POPUP_BLOCKED');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Popup blocked — falling back to redirect sign-in.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(errorString), backgroundColor: Colors.red),
+          );
+        }
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
       }
     }
   }
@@ -109,14 +130,19 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     final authService = Provider.of<AuthService>(context, listen: false);
-    final error = await authService.signInWithApple();
 
-    setState(() => _isLoading = false);
-
-    if (error != null && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString()), backgroundColor: Colors.red),
-      );
+    try {
+      await authService.signInWithApple();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 

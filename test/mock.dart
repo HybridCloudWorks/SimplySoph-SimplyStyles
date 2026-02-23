@@ -8,6 +8,7 @@ import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 
 import 'mock_firebase_setup.dart';
 
+// ignore: must_be_immutable
 class MockGoogleSignIn extends Mock implements GoogleSignIn {
   @override
   Future<GoogleSignInAccount?> signIn() async {
@@ -20,6 +21,7 @@ class MockGoogleSignIn extends Mock implements GoogleSignIn {
   }
 }
 
+// ignore: must_be_immutable
 class MockGoogleSignInAccount extends Mock implements GoogleSignInAccount {
   @override
   Future<GoogleSignInAuthentication> get authentication async {
@@ -27,6 +29,7 @@ class MockGoogleSignInAccount extends Mock implements GoogleSignInAccount {
   }
 }
 
+// ignore: must_be_immutable
 class MockGoogleSignInAuthentication extends Mock implements GoogleSignInAuthentication {
   @override
   String get idToken => 'mock_id_token';
