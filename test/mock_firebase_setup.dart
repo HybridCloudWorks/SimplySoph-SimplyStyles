@@ -8,7 +8,7 @@ void setupFirebaseCoreMocks() {
   const channelName = 'dev.flutter.pigeon.firebase_core_platform_interface.FirebaseCoreHostApi.initializeCore';
 
   TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(
-    BasicMessageChannel(channelName, StandardMessageCodec()),
+    const BasicMessageChannel(channelName, StandardMessageCodec()),
     (message) async {
       return [
         {
