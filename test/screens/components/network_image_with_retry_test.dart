@@ -4,9 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:simplystyles/auth/auth_service.dart';
 import 'package:simplystyles/services/image_service.dart';
 import 'package:simplystyles/screens/components/network_image_with_retry.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../mock_firebase_setup.dart';
 import 'package:mockito/mockito.dart';
 
 // Mock Classes
@@ -31,11 +29,7 @@ class MockImageService extends Mock implements ImageService {
 }
 
 void main() {
-  setupFirebaseCoreMocks();
-
-  setUpAll(() async {
-    await Firebase.initializeApp();
-  });
+  TestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('NetworkImageWithRetry removes prefix for getFreshDownloadUrl', (WidgetTester tester) async {
     final mockImageService = MockImageService();
@@ -55,18 +49,6 @@ void main() {
           home: Scaffold(
             body: NetworkImageWithRetry(
               imageUrl: originalUrl,
-              // We want to trigger the error builder, but NetworkImageWithRetry uses Image.network.
-              // We can't easily force Image.network to fail in a widget test without mocking HttpClient.
-              // However, the widget logic triggers refresh ONLY if _hasError is true.
-              // _hasError becomes true in the errorBuilder.
-
-              // To properly test this without network calls, we can rely on HttpOverrides or
-              // just accept that we need to simulate the "refresh" logic.
-              // Since the logic we want to test is inside _refreshUrl which is called from errorBuilder...
-
-              // We will let it fail (invalid URL for the test environment essentially)
-              // But wait, the URL provided is "valid" string but won't load in test environment (404 or no net).
-              // So it should hit errorBuilder.
             ),
           ),
         ),
@@ -76,11 +58,7 @@ void main() {
     // Initial pump
     await tester.pump();
 
-    // Image.network attempts to load. In test env, it typically fails or we can mock HttpOverrides to fail it.
-    // By default, it might throw exception in console but call errorBuilder?
-    // Actually, flutter_test blocks HTTP calls by default returning 400.
-
-    // Pump to process the image loading failure
+    // Pump to process the image loading failure (Image.network fails in test)
     await tester.pump();
 
     // The errorBuilder should have fired.
