@@ -58,10 +58,15 @@ class _VisionScannerWidgetState extends State<VisionScannerWidget> {
         userId: userId,
         imageBytes: _imageBytes!,
       );
-      final imageUrl = uploadResult['original']!;
 
-      // 2. Call Vision API
-      final data = await _functionsService.scanItemWithVision(imageUrl);
+      // Extract storage path from upload result
+      // The upload result contains 'itemId' which we can use to reconstruct the path
+      // Path format: users/$userId/wardrobe/original/$itemId.jpg
+      final itemId = uploadResult['itemId'];
+      final storagePath = 'users/$userId/wardrobe/original/$itemId.jpg';
+
+      // 2. Call Vision API with secure storage path
+      final data = await _functionsService.scanItemWithVision(storagePath);
 
       setState(() {
         _result = VisionAnalysisResult.fromJson(data);
