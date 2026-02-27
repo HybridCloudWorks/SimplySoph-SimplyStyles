@@ -171,4 +171,29 @@ class ImageService {
       return null;
     }
   }
+
+  /// Extracts the relative storage path from a download URL.
+  /// Returns null if the URL is not a valid Firebase Storage URL for the given [userId].
+  String? extractRelativePathFromUrl(String url, String userId) {
+    if (!url.contains('firebasestorage')) return null;
+
+    try {
+      final uri = Uri.parse(url);
+      final pathSegments = uri.pathSegments;
+      final oIndex = pathSegments.indexOf('o');
+
+      if (oIndex >= 0 && oIndex < pathSegments.length - 1) {
+        final encodedPath = pathSegments[oIndex + 1];
+        final path = Uri.decodeComponent(encodedPath);
+
+        // Ensure path starts with users/{userId} to be safe
+        if (path.startsWith('users/$userId/')) {
+           return path.replaceFirst('users/$userId/', '');
+        }
+      }
+    } catch (e) {
+      // Malformed URL
+    }
+    return null;
+  }
 }
