@@ -33,7 +33,7 @@ class MockGoogleSignInAuthentication extends Mock implements GoogleSignInAuthent
   String get idToken => 'mock_id_token';
 
   @override
-  String get accessToken => 'mock_access_token';
+  String? get accessToken => 'mock_access_token';
 }
 
 
