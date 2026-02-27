@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../auth/auth_service.dart';
@@ -93,14 +94,12 @@ class _NetworkImageWithRetryState extends State<NetworkImageWithRetry> {
       return widget.errorWidget ?? const Center(child: Icon(Icons.image_not_supported, color: Colors.grey));
     }
 
-    return Image.network(
-      _currentUrl!,
+    // Optimization: Use CachedNetworkImage instead of Image.network for better performance
+    return CachedNetworkImage(
+      imageUrl: _currentUrl!,
       fit: widget.fit,
-      loadingBuilder: (context, child, loadingProgress) {
-        if (loadingProgress == null) return child;
-        return widget.placeholder ?? const Center(child: CircularProgressIndicator());
-      },
-      errorBuilder: (context, error, stackTrace) {
+      placeholder: (context, url) => widget.placeholder ?? const Center(child: CircularProgressIndicator()),
+      errorWidget: (context, url, error) {
         if (!_hasError) {
           // Attempt refresh once
           WidgetsBinding.instance.addPostFrameCallback((_) {
