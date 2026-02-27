@@ -8,6 +8,21 @@ const int _maxFileSizeBytes = 10 * 1024 * 1024; // 10MB
 const int _thumbnailSize = 300;
 const int _thumbnailQuality = 85;
 
+/// Top-level function for isolate execution
+Uint8List _generateThumbnail(Uint8List imageBytes) {
+  final image = img.decodeImage(imageBytes);
+  if (image == null) throw Exception('Failed to decode image');
+
+  // Resize maintaining aspect ratio
+  final thumbnail = img.copyResize(
+    image,
+    width: image.width > image.height ? _thumbnailSize : null,
+    height: image.height >= image.width ? _thumbnailSize : null,
+  );
+
+  return Uint8List.fromList(img.encodeJpg(thumbnail, quality: _thumbnailQuality));
+}
+
 class ImageService {
   final Uuid _uuid = const Uuid();
 
@@ -75,21 +90,15 @@ class ImageService {
     required String userId,
     required String itemId,
   }) async {
-    final image = img.decodeImage(imageBytes);
-    if (image == null) throw Exception('Failed to decode image');
-
-    // Resize maintaining aspect ratio
-    final thumbnail = img.copyResize(
-      image,
-      width: image.width > image.height ? _thumbnailSize : null,
-      height: image.height >= image.width ? _thumbnailSize : null,
-    );
-    final thumbnailBytes = img.encodeJpg(thumbnail, quality: _thumbnailQuality);
+    // ⚡ Bolt: Offload CPU-intensive image resizing to a background isolate
+    // This prevents the main thread from freezing during image processing,
+    // keeping the UI responsive (e.g., loading spinners remain fluid).
+    final thumbnailBytes = await compute(_generateThumbnail, imageBytes);
 
     final thumbnailRef = FirebaseStorage.instance
         .ref('users/$userId/wardrobe/thumbnails/${itemId}_thumb.jpg');
     final metadata = SettableMetadata(contentType: 'image/jpeg');
-    await thumbnailRef.putData(Uint8List.fromList(thumbnailBytes), metadata);
+    await thumbnailRef.putData(thumbnailBytes, metadata);
     return await thumbnailRef.getDownloadURL();
   }
 
