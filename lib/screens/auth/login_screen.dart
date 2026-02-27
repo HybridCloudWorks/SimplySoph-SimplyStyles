@@ -63,18 +63,23 @@ class _LoginScreenState extends State<LoginScreen> {
 
     final authService = Provider.of<AuthService>(context, listen: false);
 
-    // Persistence is automatically configured in AuthService
-    final String? error = await authService.signIn(
-      email: _emailController.text.trim(),
-      password: _passwordController.text,
-    );
-
-    setState(() => _isLoading = false);
-
-    if (error != null && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString()), backgroundColor: Colors.red),
+    try {
+      // Persistence is automatically configured in AuthService
+      await authService.signIn(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
       );
+      // Login successful, auth wrapper will redirect
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -83,24 +88,29 @@ class _LoginScreenState extends State<LoginScreen> {
 
     final authService = Provider.of<AuthService>(context, listen: false);
 
-    final error = await authService.signInWithGoogle();
-
-    setState(() => _isLoading = false);
-
-    if (error != null && mounted) {
-      if (error is String && error == 'ERROR_POPUP_BLOCKED') {
-        // Show a banner explaining popup blocked and that we'll use redirect.
-        setState(() => _googleErrorCode = error);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Popup blocked — falling back to redirect sign-in.'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error.toString()), backgroundColor: Colors.red),
-        );
+    try {
+      await authService.signInWithGoogle();
+      // Login successful, auth wrapper will redirect
+    } catch (error) {
+      if (mounted) {
+        if (error.toString().contains('ERROR_POPUP_BLOCKED')) {
+          // Show a banner explaining popup blocked and that we'll use redirect.
+          setState(() => _googleErrorCode = 'ERROR_POPUP_BLOCKED');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Popup blocked — falling back to redirect sign-in.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(error.toString()), backgroundColor: Colors.red),
+          );
+        }
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
       }
     }
   }
@@ -109,14 +119,19 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     final authService = Provider.of<AuthService>(context, listen: false);
-    final error = await authService.signInWithApple();
-
-    setState(() => _isLoading = false);
-
-    if (error != null && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString()), backgroundColor: Colors.red),
-      );
+    try {
+      await authService.signInWithApple();
+      // Login successful, auth wrapper will redirect
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error.toString()), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
