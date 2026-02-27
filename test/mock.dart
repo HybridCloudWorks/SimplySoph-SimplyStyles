@@ -20,6 +20,7 @@ class MockGoogleSignIn extends Mock implements GoogleSignIn {
   }
 }
 
+// ignore: must_be_immutable
 class MockGoogleSignInAccount extends Mock implements GoogleSignInAccount {
   @override
   Future<GoogleSignInAuthentication> get authentication async {
@@ -32,7 +33,7 @@ class MockGoogleSignInAuthentication extends Mock implements GoogleSignInAuthent
   String get idToken => 'mock_id_token';
 
   @override
-  String get accessToken => 'mock_access_token';
+  String? get accessToken => 'mock_access_token';
 }
 
 

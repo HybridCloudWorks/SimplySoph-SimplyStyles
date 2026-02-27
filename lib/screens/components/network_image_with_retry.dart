@@ -46,41 +46,24 @@ class _NetworkImageWithRetryState extends State<NetworkImageWithRetry> {
   Future<void> _refreshUrl() async {
     if (!mounted) return;
 
-    // Only try to refresh if it looks like a firebase storage URL
-    if (_currentUrl == null || !_currentUrl!.contains('firebasestorage')) return;
+    if (_currentUrl == null) return;
 
     try {
       final imageService = context.read<ImageService>();
       final userId = context.read<AuthService>().currentUser?.uid;
 
       if (userId != null) {
-        // Parse path from URL
-        final uri = Uri.parse(_currentUrl!);
-        final pathSegments = uri.pathSegments;
+        final relativePath = imageService.extractRelativePathFromUrl(_currentUrl!, userId);
 
-        // Typical structure: .../o/users%2F{userId}%2Fwardrobe%2Fthumbnails%2F{itemId}_thumb.jpg
-        // The path segments in download URL are weirdly encoded in segment last.
-        // Actually, better to rely on decoding the path component.
-        // /v0/b/{bucket}/o/{path}
+        if (relativePath != null) {
+           final freshUrl = await imageService.getFreshDownloadUrl(userId, relativePath);
 
-        final oIndex = pathSegments.indexOf('o');
-        if (oIndex >= 0 && oIndex < pathSegments.length - 1) {
-          final encodedPath = pathSegments[oIndex + 1];
-          final path = Uri.decodeComponent(encodedPath);
-
-          // Ensure path starts with users/{userId} to be safe
-          if (path.startsWith('users/$userId/')) {
-             // getFreshDownloadUrl automatically prepends 'users/$userId/', so we must pass a relative path.
-             final relativePath = path.replaceFirst('users/$userId/', '');
-             final freshUrl = await imageService.getFreshDownloadUrl(userId, relativePath);
-
-             if (freshUrl != null && mounted) {
-               setState(() {
-                 _currentUrl = freshUrl;
-                 _hasError = false;
-               });
-             }
-          }
+           if (freshUrl != null && mounted) {
+             setState(() {
+               _currentUrl = freshUrl;
+               _hasError = false;
+             });
+           }
         }
       }
     } catch (e) {
