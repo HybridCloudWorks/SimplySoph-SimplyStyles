@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:simplystyles/services/image_service.dart';
 
 import 'package:simplystyles/api/gemini_cortex_api.dart';
 
@@ -14,6 +16,7 @@ class PersonaFitScannerScreen extends StatefulWidget {
 
 class _PersonaFitScannerScreenState extends State<PersonaFitScannerScreen> {
   final GeminiCortexAPI _geminiAPI = GeminiCortexAPI();
+  final ImageService _imageService = ImageService();
   final ImagePicker _picker = ImagePicker();
 
   bool _isScanning = false;
@@ -31,10 +34,26 @@ class _PersonaFitScannerScreenState extends State<PersonaFitScannerScreen> {
       });
 
       try {
-        //  Analyze the image to get item attributes
-        final itemAttributes = await _geminiAPI.analyzeClothingImage(image.path);
+        final userId = FirebaseAuth.instance.currentUser?.uid;
+        if (userId == null) throw Exception('User not logged in');
 
-        //  Calculate the persona fit
+        // 1. Upload image to Firebase Storage
+        final imageBytes = await image.readAsBytes();
+        final uploadResult = await _imageService.uploadClothingImage(
+          userId: userId,
+          imageBytes: imageBytes,
+        );
+
+        // 2. Extract relative path for secure API call
+        // The uploadResult returns the full download URL, so we need to extract the path
+        // OR we can reconstruct it since we know the structure: users/$userId/wardrobe/original/$itemId.jpg
+        final itemId = uploadResult['itemId'];
+        final storagePath = 'users/$userId/wardrobe/original/$itemId.jpg';
+
+        // 3. Analyze the image using the secure storage path
+        final itemAttributes = await _geminiAPI.analyzeClothingImage(storagePath);
+
+        // 4. Calculate the persona fit
         final result = await _geminiAPI.calculatePersonaFit(itemAttributes);
 
         if (mounted) {
@@ -43,6 +62,10 @@ class _PersonaFitScannerScreenState extends State<PersonaFitScannerScreen> {
             _scanResult = result;
           });
         }
+
+        // Cleanup: Optionally delete the temp image from storage if it's not meant to be permanent
+        // await _imageService.deleteClothingImage(userId, itemId!);
+
       } catch (e) {
         if (mounted) {
           setState(() {
