@@ -30,10 +30,19 @@ exports.vortex_analyzeItem = onCall({region: 'us-central1'}, async (request) => 
     throw new Error('User must be authenticated');
   }
 
-  const {imageUrl} = request.data;
-  if (!imageUrl) {
-    throw new Error('Image URL is required');
+  const {storagePath} = request.data;
+  if (!storagePath) {
+    throw new Error('Storage path is required');
   }
+
+  // IDOR Protection: Ensure user can only access their own files
+  if (!storagePath.startsWith(`users/${request.auth.uid}/`)) {
+    throw new Error('Unauthorized access to storage path');
+  }
+
+  // SSRF Protection: Use internal gs:// URI
+  const bucketName = admin.storage().bucket().name;
+  const gcsUri = `gs://${bucketName}/${storagePath}`;
 
   const prompt = `Analyze this clothing item and return a JSON object with:
 - category (tops/bottoms/dresses/outerwear/shoes/accessories)
@@ -50,7 +59,7 @@ Return ONLY valid JSON, no markdown.`;
       role: 'user',
       parts: [
         {text: prompt},
-        {fileData: {mimeType: 'image/jpeg', fileUri: imageUrl}}
+        {fileData: {mimeType: 'image/jpeg', fileUri: gcsUri}}
       ],
     }],
   });
@@ -308,15 +317,24 @@ exports.scanItemWithVision = onCall({region: 'us-central1'}, async (request) => 
     throw new Error('User must be authenticated');
   }
 
-  const { imageUrl } = request.data;
-  if (!imageUrl) {
-    throw new Error('Image URL is required');
+  const { storagePath } = request.data;
+  if (!storagePath) {
+    throw new Error('Storage path is required');
+  }
+
+  // IDOR Protection: Ensure user can only access their own files
+  if (!storagePath.startsWith(`users/${request.auth.uid}/`)) {
+    throw new Error('Unauthorized access to storage path');
   }
 
   try {
+    // SSRF Protection: Use internal gs:// URI
+    const bucketName = admin.storage().bucket().name;
+    const gcsUri = `gs://${bucketName}/${storagePath}`;
+
     // Perform label detection and logo detection
     const [result] = await visionClient.annotateImage({
-      image: { source: { imageUri: imageUrl } },
+      image: { source: { imageUri: gcsUri } },
       features: [
         { type: 'LABEL_DETECTION' },
         { type: 'LOGO_DETECTION' },
