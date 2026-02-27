@@ -18,8 +18,8 @@ void main() {
           Provider<ImageService>(create: (_) => MockImageService()),
           Provider<AuthService>(create: (_) => MockAuthService()),
         ],
-        child: MaterialApp(
-          home: const NetworkImageWithRetry(
+        child: const MaterialApp(
+          home: NetworkImageWithRetry(
             imageUrl: 'https://example.com/image.jpg',
           ),
         ),
