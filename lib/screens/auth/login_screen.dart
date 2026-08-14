@@ -64,19 +64,12 @@ class _LoginScreenState extends State<LoginScreen> {
     final authService = Provider.of<AuthService>(context, listen: false);
 
     try {
-      final user = await authService.signIn(
+      // Persistence is automatically configured in AuthService
+      await authService.signIn(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
-
-      // If user is null but no exception, it might mean failure?
-      // AuthService throws on failure, so user shouldn't be null here if successful.
-      if (user == null) {
-        throw Exception('Login failed');
-      }
-
-      // Success logic (handled by auth state stream usually, or navigation)
-      // The current code doesn't navigate on success, relying on auth state change.
+      // Login successful, auth wrapper will redirect
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -96,15 +89,11 @@ class _LoginScreenState extends State<LoginScreen> {
     final authService = Provider.of<AuthService>(context, listen: false);
 
     try {
-      final user = await authService.signInWithGoogle();
-      if (user == null) {
-        // User cancelled, maybe don't show error?
-        // Or handle specific cancellation error
-      }
-    } catch (e) {
-      final errorString = e.toString();
+      await authService.signInWithGoogle();
+      // Login successful, auth wrapper will redirect
+    } catch (error) {
       if (mounted) {
-        if (errorString.contains('ERROR_POPUP_BLOCKED')) {
+        if (error.toString().contains('ERROR_POPUP_BLOCKED')) {
           // Show a banner explaining popup blocked and that we'll use redirect.
           setState(() => _googleErrorCode = 'ERROR_POPUP_BLOCKED');
           ScaffoldMessenger.of(context).showSnackBar(
@@ -115,7 +104,7 @@ class _LoginScreenState extends State<LoginScreen> {
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(errorString), backgroundColor: Colors.red),
+            SnackBar(content: Text(error.toString()), backgroundColor: Colors.red),
           );
         }
       }
@@ -130,13 +119,13 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     final authService = Provider.of<AuthService>(context, listen: false);
-
     try {
       await authService.signInWithApple();
-    } catch (e) {
+      // Login successful, auth wrapper will redirect
+    } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+          SnackBar(content: Text(error.toString()), backgroundColor: Colors.red),
         );
       }
     } finally {
