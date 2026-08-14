@@ -1,13 +1,15 @@
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/services.dart';
 
 void setupFirebaseCoreMocks() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   // Mock Pigeon channel (Used by newer firebase_core versions)
-  const channelName = 'dev.flutter.pigeon.firebase_core_platform_interface.FirebaseCoreHostApi.initializeCore';
+  // Registering for both potential channel names to be safe.
 
-  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(
+  // 1. Channel name based on API Class name (Standard Pigeon)
+  const channelName = 'dev.flutter.pigeon.firebase_core_platform_interface.FirebaseCoreHostApi';
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockDecodedMessageHandler(
     const BasicMessageChannel(channelName, StandardMessageCodec()),
     (message) async {
       return [
@@ -22,7 +24,27 @@ void setupFirebaseCoreMocks() {
           'pluginConstants': {},
         }
       ];
-    },
+    }
+  );
+
+  // 2. Channel name including method (Seen in some versions/implementations or memory)
+  const channelNameMethod = 'dev.flutter.pigeon.firebase_core_platform_interface.FirebaseCoreHostApi.initializeCore';
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockDecodedMessageHandler(
+    const BasicMessageChannel(channelNameMethod, StandardMessageCodec()),
+    (message) async {
+       return [
+        {
+          'name': '[DEFAULT]',
+          'options': {
+            'apiKey': '123',
+            'appId': '123',
+            'messagingSenderId': '123',
+            'projectId': '123',
+          },
+          'pluginConstants': {},
+        }
+      ];
+    }
   );
 
   // Mock Legacy MethodChannel (Used by older firebase_core versions or specific methods)
@@ -55,10 +77,4 @@ void setupFirebaseCoreMocks() {
       return null;
     },
   );
-}
-
-typedef Callback = Future<void> Function();
-
-void setupFirebaseCoreMocksCallback(Callback callback) {
-  callback();
 }
