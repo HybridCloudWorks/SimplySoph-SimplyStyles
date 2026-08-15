@@ -23,7 +23,7 @@ The current codebase demonstrates a functional proof-of-concept but **fails crit
 *In this phase, I adopt the persona of a skeptical senior engineer to ruthlessly expose flaws.*
 
 ### 1. Cloud Functions (`functions/index.js`)
-*   ** fragile JSON Parsing:**
+*   **Fragile JSON Parsing:**
     *   **Flaw:** `text.match(/\{[\s\S]*\}/)` and `JSON.parse()` are used blindly. AI models often wrap JSON in markdown blocks (```json ... ```) or add conversational text.
     *   **Risk:** High failure rate. If the regex fails, the function crashes or returns `null`, breaking the client flow.
 *   **Unbounded Reads:**
@@ -147,7 +147,7 @@ Remove `forceRefresh: true` unless you handle a specific `401` error.
 ### 3. Enterprise Hardening
 
 *   **Secrets:** Migrate `process.env.RAPIDAPI_KEY` to **Google Secret Manager**.
-    *   `run_in_bash_session`: `firebase functions:secrets:set RAPIDAPI_KEY`
+    *   **Shell command:** `firebase functions:secrets:set RAPIDAPI_KEY`
     *   Code: `const { defineSecret } = require('firebase-functions/params'); const apiKey = defineSecret('RAPIDAPI_KEY');`
 *   **TypeScript:** Rewrite `functions/index.js` in **TypeScript** to ensure type safety across the boundary.
 *   **Linting:** Enforce `pedantic` rules in `analysis_options.yaml`.
