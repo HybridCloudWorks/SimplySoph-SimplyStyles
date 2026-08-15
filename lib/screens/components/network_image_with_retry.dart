@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../auth/auth_service.dart';
@@ -45,41 +46,24 @@ class _NetworkImageWithRetryState extends State<NetworkImageWithRetry> {
   Future<void> _refreshUrl() async {
     if (!mounted) return;
 
-    // Only try to refresh if it looks like a firebase storage URL
-    if (_currentUrl == null || !_currentUrl!.contains('firebasestorage')) return;
+    if (_currentUrl == null) return;
 
     try {
       final imageService = context.read<ImageService>();
       final userId = context.read<AuthService>().currentUser?.uid;
 
       if (userId != null) {
-        // Parse path from URL
-        final uri = Uri.parse(_currentUrl!);
-        final pathSegments = uri.pathSegments;
+        final relativePath = imageService.extractRelativePathFromUrl(_currentUrl!, userId);
 
-        // Typical structure: .../o/users%2F{userId}%2Fwardrobe%2Fthumbnails%2F{itemId}_thumb.jpg
-        // The path segments in download URL are weirdly encoded in segment last.
-        // Actually, better to rely on decoding the path component.
-        // /v0/b/{bucket}/o/{path}
+        if (relativePath != null) {
+           final freshUrl = await imageService.getFreshDownloadUrl(userId, relativePath);
 
-        final oIndex = pathSegments.indexOf('o');
-        if (oIndex >= 0 && oIndex < pathSegments.length - 1) {
-          final encodedPath = pathSegments[oIndex + 1];
-          final path = Uri.decodeComponent(encodedPath);
-
-          // Ensure path starts with users/{userId} to be safe
-          if (path.startsWith('users/$userId/')) {
-             // getFreshDownloadUrl automatically prepends 'users/$userId/', so we must pass a relative path.
-             final relativePath = path.replaceFirst('users/$userId/', '');
-             final freshUrl = await imageService.getFreshDownloadUrl(userId, relativePath);
-
-             if (freshUrl != null && mounted) {
-               setState(() {
-                 _currentUrl = freshUrl;
-                 _hasError = false;
-               });
-             }
-          }
+           if (freshUrl != null && mounted) {
+             setState(() {
+               _currentUrl = freshUrl;
+               _hasError = false;
+             });
+           }
         }
       }
     } catch (e) {
@@ -93,14 +77,12 @@ class _NetworkImageWithRetryState extends State<NetworkImageWithRetry> {
       return widget.errorWidget ?? const Center(child: Icon(Icons.image_not_supported, color: Colors.grey));
     }
 
-    return Image.network(
-      _currentUrl!,
+    // Optimization: Use CachedNetworkImage instead of Image.network for better performance
+    return CachedNetworkImage(
+      imageUrl: _currentUrl!,
       fit: widget.fit,
-      loadingBuilder: (context, child, loadingProgress) {
-        if (loadingProgress == null) return child;
-        return widget.placeholder ?? const Center(child: CircularProgressIndicator());
-      },
-      errorBuilder: (context, error, stackTrace) {
+      placeholder: (context, url) => widget.placeholder ?? const Center(child: CircularProgressIndicator()),
+      errorWidget: (context, url, error) {
         if (!_hasError) {
           // Attempt refresh once
           WidgetsBinding.instance.addPostFrameCallback((_) {

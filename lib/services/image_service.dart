@@ -8,6 +8,21 @@ const int _maxFileSizeBytes = 10 * 1024 * 1024; // 10MB
 const int _thumbnailSize = 300;
 const int _thumbnailQuality = 85;
 
+/// Top-level function for isolate execution
+Uint8List _generateThumbnail(Uint8List imageBytes) {
+  final image = img.decodeImage(imageBytes);
+  if (image == null) throw Exception('Failed to decode image');
+
+  // Resize maintaining aspect ratio
+  final thumbnail = img.copyResize(
+    image,
+    width: image.width > image.height ? _thumbnailSize : null,
+    height: image.height >= image.width ? _thumbnailSize : null,
+  );
+
+  return Uint8List.fromList(img.encodeJpg(thumbnail, quality: _thumbnailQuality));
+}
+
 class ImageService {
   final Uuid _uuid = const Uuid();
 
@@ -75,21 +90,15 @@ class ImageService {
     required String userId,
     required String itemId,
   }) async {
-    final image = img.decodeImage(imageBytes);
-    if (image == null) throw Exception('Failed to decode image');
-
-    // Resize maintaining aspect ratio
-    final thumbnail = img.copyResize(
-      image,
-      width: image.width > image.height ? _thumbnailSize : null,
-      height: image.height >= image.width ? _thumbnailSize : null,
-    );
-    final thumbnailBytes = img.encodeJpg(thumbnail, quality: _thumbnailQuality);
+    // ⚡ Bolt: Offload CPU-intensive image resizing to a background isolate
+    // This prevents the main thread from freezing during image processing,
+    // keeping the UI responsive (e.g., loading spinners remain fluid).
+    final thumbnailBytes = await compute(_generateThumbnail, imageBytes);
 
     final thumbnailRef = FirebaseStorage.instance
         .ref('users/$userId/wardrobe/thumbnails/${itemId}_thumb.jpg');
     final metadata = SettableMetadata(contentType: 'image/jpeg');
-    await thumbnailRef.putData(Uint8List.fromList(thumbnailBytes), metadata);
+    await thumbnailRef.putData(thumbnailBytes, metadata);
     return await thumbnailRef.getDownloadURL();
   }
 
@@ -161,5 +170,30 @@ class ImageService {
     } catch (e) {
       return null;
     }
+  }
+
+  /// Extracts the relative storage path from a download URL.
+  /// Returns null if the URL is not a valid Firebase Storage URL for the given [userId].
+  String? extractRelativePathFromUrl(String url, String userId) {
+    if (!url.contains('firebasestorage')) return null;
+
+    try {
+      final uri = Uri.parse(url);
+      final pathSegments = uri.pathSegments;
+      final oIndex = pathSegments.indexOf('o');
+
+      if (oIndex >= 0 && oIndex < pathSegments.length - 1) {
+        final encodedPath = pathSegments[oIndex + 1];
+        final path = Uri.decodeComponent(encodedPath);
+
+        // Ensure path starts with users/{userId} to be safe
+        if (path.startsWith('users/$userId/')) {
+           return path.replaceFirst('users/$userId/', '');
+        }
+      }
+    } catch (e) {
+      // Malformed URL
+    }
+    return null;
   }
 }

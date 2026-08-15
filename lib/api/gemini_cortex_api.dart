@@ -4,10 +4,11 @@ class GeminiCortexAPI {
   final FirebaseFunctions _functions = FirebaseFunctions.instance;
 
   /// Analyzes a clothing item image and returns attributes
-  Future<Map<String, dynamic>> analyzeClothingImage(String imageUrl) async {
+  /// [storagePath] The relative path in Firebase Storage (e.g., users/uid/wardrobe/original/item.jpg)
+  Future<Map<String, dynamic>> analyzeClothingImage(String storagePath) async {
     try {
       final callable = _functions.httpsCallable('vortex_analyzeItem');
-      final result = await callable.call({'imageUrl': imageUrl});
+      final result = await callable.call({'storagePath': storagePath});
       return result.data;
     } catch (e) {
       throw Exception('Error analyzing image: $e');

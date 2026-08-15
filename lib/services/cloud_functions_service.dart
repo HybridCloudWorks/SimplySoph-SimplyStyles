@@ -5,10 +5,12 @@ class CloudFunctionsService {
       FirebaseFunctions.instanceFor(region: 'us-central1');
 
   // 1. Google Vision AI
-  Future<Map<String, dynamic>> scanItemWithVision(String imageUrl) async {
+  /// Scans an item using Google Vision AI.
+  /// [storagePath] The relative path in Firebase Storage (e.g., users/uid/wardrobe/original/item.jpg)
+  Future<Map<String, dynamic>> scanItemWithVision(String storagePath) async {
     try {
       final result = await _functions.httpsCallable('scanItemWithVision').call({
-        'imageUrl': imageUrl,
+        'storagePath': storagePath,
       });
       return Map<String, dynamic>.from(result.data['data']);
     } catch (e) {
