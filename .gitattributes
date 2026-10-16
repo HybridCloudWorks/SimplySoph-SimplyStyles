@@ -1,0 +1,7 @@
+# Flutter platform scaffolding (generated runner code), excluded from the
+# GitHub language bar.
+linux/** linguist-vendored
+windows/** linguist-vendored
+macos/** linguist-vendored
+ios/** linguist-vendored
+android/** linguist-vendored

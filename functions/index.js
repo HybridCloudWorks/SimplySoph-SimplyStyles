@@ -12,13 +12,18 @@ admin.initializeApp();
 // Initialize Vision Client
 const visionClient = new vision.ImageAnnotatorClient();
 
+// gemini-3.8-flash (GA) is served from the global endpoint, not us-central1.
+// The SDK only builds "<location>-aiplatform.googleapis.com" hosts, so the
+// global host is set explicitly. Model list:
+// https://docs.cloud.google.com/vertex-ai/generative-ai/docs/learn/model-versions
 const vertexAI = new VertexAI({
   project: 'simplysoph-66c78',
-  location: 'us-central1',
+  location: 'global',
+  apiEndpoint: 'aiplatform.googleapis.com',
 });
 
 const model = vertexAI.preview.getGenerativeModel({
-  model: 'gemini-1.5-flash',
+  model: 'gemini-3.8-flash',
   generationConfig: {
     maxOutputTokens: 2048,
     temperature: 0.7,

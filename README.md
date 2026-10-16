@@ -2,10 +2,9 @@
 
 > **AI-Powered Wardrobe Assistant for Gen-Z Fashion Creators**
 
-[![CI/CD](https://github.com/saulpatinojr/SimplySoph-SimplyStyles/actions/workflows/firebase-hosting-deploy.yml/badge.svg)](https://github.com/saulpatinojr/SimplySoph-SimplyStyles/actions/workflows/firebase-hosting-deploy.yml)
-[![Firebase Hosting](https://img.shields.io/badge/Firebase-Hosting-orange?logo=firebase)](https://simplysoph-66c78.web.app)
+[![CI/CD](https://github.com/HybridCloudWorks/SimplySoph-SimplyStyles/actions/workflows/firebase-hosting-deploy.yml/badge.svg)](https://github.com/HybridCloudWorks/SimplySoph-SimplyStyles/actions/workflows/firebase-hosting-deploy.yml)
 [![Flutter](https://img.shields.io/badge/Flutter-3.0+-blue?logo=flutter)](https://flutter.dev)
-[![License](https://img.shields.io/badge/License-Proprietary-red)]()
+[![License](https://img.shields.io/badge/License-Proprietary-red)](LICENSE)
 
 ## 🎯 What is SimplyStyles?
 
@@ -16,7 +15,7 @@ SimplyStyles is a **Flutter-based fashion app** designed for content creators an
 - 💡 **Recommend outfits** from your existing clothes
 - 🛍️ **Discover new pieces** that match your style
 
-**Live Demo**: [simplysoph-66c78.web.app](https://simplysoph-66c78.web.app)
+**Live Demo**: none. There is no public deployment of this app yet.
 
 ---
 
@@ -30,7 +29,7 @@ SimplyStyles is a **Flutter-based fashion app** designed for content creators an
 | **AI Analysis** | Gemini-powered clothing detection (category, color, brand) |
 | **Style Personas** | Auto-generated style profiles from wardrobe (5+ items) |
 | **Onboarding Quiz** | Style preference & color selection |
-| **Cloud Functions** | 8 serverless AI functions including Vision AI |
+| **Cloud Functions** | 9 serverless functions, including Gemini and Vision AI |
 
 ### 🚧 In Development
 | Feature | Status | Issue |
@@ -55,9 +54,9 @@ See our [Issues page](../../issues) for the full list. Key issues:
 | **Frontend** | Flutter 3.0+, Material 3 |
 | **State Management** | Provider |
 | **Backend** | Firebase (Auth, Firestore, Storage, Functions) |
-| **AI/ML** | Google Gemini 1.5 Flash, Google Cloud Vision |
+| **AI/ML** | Google Gemini 3.8 Flash (Vertex AI), Google Cloud Vision |
 | **External APIs** | RapidAPI (Shein, Zappos), Google Trends |
-| **CI/CD** | GitHub Actions → Firebase Hosting |
+| **CI/CD** | GitHub Actions (test and build; manual Cloud Functions deploy) |
 
 ---
 
@@ -66,13 +65,13 @@ See our [Issues page](../../issues) for the full list. Key issues:
 ### Prerequisites
 - Flutter SDK 3.0+
 - Firebase CLI
-- Node.js 18+ (for Cloud Functions)
+- Node.js 20 (for Cloud Functions)
 
 ### Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/saulpatinojr/SimplySoph-SimplyStyles.git
+git clone https://github.com/HybridCloudWorks/SimplySoph-SimplyStyles.git
 cd SimplySoph-SimplyStyles
 
 # Install Flutter dependencies
@@ -92,10 +91,7 @@ flutter run -d chrome
    ```bash
    firebase functions:config:set rapidapi.key="YOUR_KEY"
    ```
-3. **Deploy Functions**:
-   ```bash
-   firebase deploy --only functions
-   ```
+3. **Deploy Functions**: run the manual **CI/CD** workflow in GitHub Actions (Run workflow), which deploys only this app's Cloud Functions. The Firebase project is shared with the SimplySoph website, so never deploy hosting or rules from this repo. See [Deployment](docs/Deployment.md).
 
 ---
 
@@ -112,7 +108,7 @@ lib/
 │   ├── onboarding/     # Style quiz
 │   ├── scanner/        # Add item via camera
 │   └── shop/           # Recommendations
-├── services/           # Business logic (11 services)
+├── services/           # Business logic (13 services)
 ├── state/              # State management
 └── utils/              # Helpers
 
@@ -158,13 +154,11 @@ Test files:
 
 1. Check [open issues](../../issues) for available tasks
 2. Issues labeled `good first issue` are beginner-friendly
-3. Critical issues are labeled `critical` or `high-priority`
+3. Priority is in the issue title: `[Critical]`, `[High]`, `[Medium]` or `[Low]`
 
-### Priority Labels
+### Labels
 | Label | Meaning |
 |-------|---------|
-| `critical` | Blocks core functionality |
-| `high-priority` | Important for next release |
 | `enhancement` | New feature |
 | `bug` | Something broken |
 
@@ -172,7 +166,7 @@ Test files:
 
 ## 📄 License
 
-Proprietary - All rights reserved.
+All rights reserved. See [LICENSE](LICENSE).
 
 ---
 

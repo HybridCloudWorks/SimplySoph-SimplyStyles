@@ -370,10 +370,10 @@ git push origin main           # Push to main
 ## Resources
 
 ### Internal Links
-- [GitHub Repository](https://github.com/saulpatinojr/SimplySoph-SimplyStyles)
+- [GitHub Repository](https://github.com/HybridCloudWorks/SimplySoph-SimplyStyles)
 - [Live Application](https://simplysoph-66c78.web.app)
 - [Firebase Console](https://console.firebase.google.com/project/simplysoph-66c78)
-- [GitHub Actions](https://github.com/saulpatinojr/SimplySoph-SimplyStyles/actions)
+- [GitHub Actions](https://github.com/HybridCloudWorks/SimplySoph-SimplyStyles/actions)
 
 ### External Resources
 - [Flutter Documentation](https://docs.flutter.dev/)
@@ -386,7 +386,7 @@ git push origin main           # Push to main
 ## Contact & Support
 
 **Project Lead**: Saul Patino Jr  
-**Repository**: saulpatinojr/SimplySoph-SimplyStyles  
+**Repository**: HybridCloudWorks/SimplySoph-SimplyStyles  
 **Issues**: Use GitHub Issues for bug reports and feature requests
 
 ---

@@ -1,4 +1,7 @@
 @echo off
+REM WARNING: Firebase project simplysoph-66c78 is shared with the live SimplySoph
+REM website. Its default Hosting site belongs to that website, so this script would
+REM overwrite it. Do not run it until SimplyStyles has its own Hosting site.
 REM SimplyStyles Firebase Deployment Script for Windows
 REM This script builds and deploys your Flutter web app to Firebase Hosting
 
