@@ -2,7 +2,7 @@
 
 Guidance for staging/production deploys and environment management.
 
-> **Warning:** Firebase project `simplysoph-66c78` is shared with the live SimplySoph website. Its default Hosting site, Firestore rules and Storage rules belong to that website, so `firebase deploy`, `firebase deploy --only hosting` and the `scripts/deploy*` scripts would overwrite it. Until SimplyStyles has its own Hosting site or project, deploy Cloud Functions only, using the manual job in `.github/workflows/firebase-hosting-deploy.yml`.
+> **Warning:** Firebase project `simplysoph-66c78` is shared with the live SimplySoph website. Its default Hosting site, Firestore rules and Storage rules belong to that website, so `firebase deploy`, `firebase deploy --only hosting` and the `scripts/deploy*` scripts would overwrite it. Until SimplyStyles has its own Hosting site or project, deploy Cloud Functions only, using the manual job in `.github/workflows/firebase-hosting-deploy.yml` (see [Cloud Functions deploy](#cloud-functions-deploy)). The older sections further down (service account JSON keys, `FIREBASE_SERVICE_ACCOUNT`, hosting deploys) are kept for history and do not apply.
 
 ### Consolidated Sources
 
@@ -10,6 +10,94 @@ Guidance for staging/production deploys and environment management.
 - DEPLOY_NOW.md
 - FIREBASE_HOSTING_GUIDE.md
 - DEPLOY_STORAGE_RULES.md
+
+## Cloud Functions deploy
+
+### Own codebase: `simplystyles`
+
+`firebase.json` puts this app's functions in their own Firebase codebase:
+
+```json
+"functions": [{ "source": "functions", "codebase": "simplystyles" }]
+```
+
+The Firebase CLI records each function's codebase and, on deploy, only creates, updates or deletes functions in the codebases being deployed ([Organize multiple functions: managing multiple repositories](https://firebase.google.com/docs/functions/organize-functions#managing_multiple_repositories)). So:
+
+- The website (`HybridCloudWorks/SimplySoph-SimplySoph`) deploys its `default` codebase with `firebase deploy --only functions --force`. That only deletes stale functions in `default`, so it leaves the `simplystyles` functions alone.
+- This repo deploys with `firebase deploy --only functions:simplystyles`, which can't touch the website's functions (`api`, `setAdminClaim`, `onBlogPostWrite`, `onVideoWrite`, `onPhotoAlbumWrite`, `onContactMessageCreate`).
+- Function names must stay unique across the project. A function with the same name in both codebases is taken over by whichever repo deploys it last.
+- The deploy job doesn't pass `--force`. If you remove a function from `functions/index.js`, the deploy stops instead of deleting it. To delete one on purpose, run `firebase functions:delete <name> --project simplysoph-66c78`.
+
+The codebase split protects against the CLI deleting the other repo's functions. It is not an IAM boundary: Google Cloud roles can't be scoped to a codebase, so the deploy identity could still change any function in the project. Its Workload Identity Federation provider limits who can use it (see below).
+
+### Runtime and dependencies
+
+- **Node.js 22** (`functions/package.json` `engines`). Cloud Run functions decommissions Node.js 20 on 2026-10-30; after that, functions on it can't be deployed or updated ([runtime support](https://cloud.google.com/functions/docs/runtime-support)). `firebase-admin` 14 also needs Node.js 22 or later.
+- **`firebase-functions` 7.3.2**, the first 7.x release whose peer range accepts `firebase-admin` 14, and **`firebase-admin` 14.5.0**. `firebase-admin` 14 removed the namespaced API (`admin.firestore()`, `admin.storage()`), so `functions/index.js` uses `firebase-admin/app`, `firebase-admin/firestore` and `firebase-admin/storage`.
+- All 9 functions are 2nd gen, in `us-central1`.
+
+### CI checks
+
+The `functions` job in `.github/workflows/firebase-hosting-deploy.yml` runs on every pull request and every push to `main`, without secrets:
+
+1. `npm ci`
+2. `npm run lint` (`node --check index.js`)
+3. `npm test`, if a test script exists (there are no function tests yet)
+4. A load check: the same function discovery `firebase deploy` runs (`firebase-functions` with `FUNCTIONS_MANIFEST_OUTPUT_PATH`), against a stub project. It fails unless exactly the 9 expected functions load, as 2nd-gen functions in `us-central1` with the expected trigger types.
+
+### Deploying
+
+Run **Actions → CI/CD - Build, Test & Deploy → Run workflow** on `main`, or:
+
+```bash
+gh workflow run firebase-hosting-deploy.yml --repo HybridCloudWorks/SimplySoph-SimplyStyles --ref main
+```
+
+The `deploy-functions` job runs only for manual runs on `main`, after the `test` and `functions` jobs pass. It:
+
+1. stops with an error if the repository variable `GCP_WORKLOAD_IDENTITY_PROVIDER` or `GCP_SERVICE_ACCOUNT` is missing;
+2. signs in to Google Cloud with GitHub OIDC and Workload Identity Federation (`google-github-actions/auth`), with no stored key or token;
+3. runs `firebase deploy --only functions:simplystyles --project simplysoph-66c78 --non-interactive` with firebase-tools 15.32.1.
+
+It never deploys hosting, Firestore rules or Storage rules.
+
+### One-time setup for keyless deploys
+
+A project Owner runs [`scripts/setup-functions-deploy-identity.ps1`](../scripts/setup-functions-deploy-identity.ps1) once, with PowerShell 7.2 or later and `gcloud` and `gh` signed in:
+
+```powershell
+pwsh ./scripts/setup-functions-deploy-identity.ps1 -WhatIf            # preview, changes nothing
+pwsh ./scripts/setup-functions-deploy-identity.ps1 -SetRepoVariables  # apply and set the repo variables
+```
+
+Without `-SetRepoVariables` it prints the `gh variable set` commands instead. It checks the current state before each step, skips what is already done, and prints undo commands for what it changed. It creates or reuses:
+
+| Item | Value |
+| --- | --- |
+| Workload identity provider | `simplystyles-functions` in the existing `github-actions` pool (project number 424903425639). It accepts only GitHub tokens with `repository_id` 1087437215, `repository_owner_id` 312844660 and `ref` `refs/heads/main`. The website's `github-actions-provider` and its bindings are not changed. |
+| Deploy service account | `simplystyles-functions-deploy@simplysoph-66c78.iam.gserviceaccount.com` |
+| Project roles | `roles/cloudfunctions.admin`, `roles/cloudscheduler.admin`, `roles/firebase.viewer`, `roles/serviceusage.serviceUsageConsumer` |
+| Service Account User | On `424903425639-compute@developer.gserviceaccount.com` (the functions runtime and Cloud Build service account) and `simplysoph-66c78@appspot.gserviceaccount.com` |
+| Impersonation | `roles/iam.workloadIdentityUser` on the deploy service account for `principalSet://iam.googleapis.com/projects/424903425639/locations/global/workloadIdentityPools/github-actions/attribute.repository_id/1087437215` |
+| Google-managed identities | `roles/run.invoker` for the compute service account (missing today), and the Cloud Storage, Pub/Sub and Eventarc bindings if they are missing |
+| APIs | The functions deploy APIs, if any are disabled |
+| Repository variables | `GCP_WORKLOAD_IDENTITY_PROVIDER`, `GCP_SERVICE_ACCOUNT` |
+
+Why these roles:
+
+- **Cloud Functions Admin, not Developer.** Before creating new callable or HTTPS functions, firebase-tools checks for `cloudfunctions.functions.setIamPolicy`, then makes callables public with `run.services.setIamPolicy` ([Cloud Run: allowing public access](https://cloud.google.com/run/docs/authenticating/public)). Cloud Functions Admin has both, so Cloud Run Admin isn't needed.
+- **Cloud Scheduler Admin** creates and updates the job for `vortex_updateDailyTrends`.
+- **Firebase Viewer** (read-only) covers the project config, the storage trigger's bucket and the CLI's pre-deploy checks.
+- **Service Usage Consumer** lets the CLI check that the APIs are enabled.
+- **Service Account User** on the runtime and Cloud Build service account is the documented deployer requirement ([Cloud Functions IAM roles](https://cloud.google.com/functions/docs/reference/iam/roles)). firebase-tools also checks it on the App Engine default service account before any functions deploy.
+- **No Artifact Registry Writer.** Cloud Build pushes the images, as the build service account. The `gcf-artifacts` repository in `us-central1` already has the `firebase-functions-cleanup` policy, so the CLI doesn't need to set one.
+- **Google-managed identities.** On the first 2nd-gen deploy of a codebase, firebase-tools checks these project bindings and tries to add missing ones itself, which would need Project IAM Admin. The script adds them instead.
+
+After the first green keyless deploy, delete the old token secret:
+
+```bash
+gh secret delete FIREBASE_TOKEN --repo HybridCloudWorks/SimplySoph-SimplyStyles
+```
 
 ---
 

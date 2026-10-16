@@ -34,7 +34,7 @@
     {
       "label": "Firebase: Deploy Functions",
       "type": "shell",
-      "command": "cd functions && firebase deploy --only functions",
+      "command": "cd functions && firebase deploy --only functions:simplystyles",
       "problemMatcher": []
     },
     {
