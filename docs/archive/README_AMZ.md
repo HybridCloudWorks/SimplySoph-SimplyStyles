@@ -516,7 +516,7 @@ Revenue Metrics:
 ### **Local Development Setup**
 ```bash
 # 1. Clone repository
-git clone https://github.com/saulpatinojr/SimplySoph-SimplyStyles.git
+git clone https://github.com/HybridCloudWorks/SimplySoph-SimplyStyles.git
 cd SimplySoph-SimplyStyles
 
 # 2. Install Flutter dependencies

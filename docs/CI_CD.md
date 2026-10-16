@@ -31,8 +31,8 @@ This guide walks you through setting up automated testing, building, and deploym
 ### Option A: Using the provided script (Recommended)
 
 ```bash
-# Navigate to your project
-cd c:\Users\saulp\AppData\Workspace\GitHub\SimplySoph-SimplyStyles
+# Navigate to your local clone
+cd SimplySoph-SimplyStyles
 
 # Run the script (use Git Bash on Windows)
 bash scripts/create_firebase_service_account.sh simplysoph-66c78 github-actions-deploy
@@ -596,7 +596,7 @@ You'll know everything is working when:
 **Option A - Windows (Easiest):**
 
 ```cmd
-cd c:\Users\saulp\AppData\Workspace\GitHub\SimplySoph-SimplyStyles
+cd SimplySoph-SimplyStyles
 scripts\setup-cicd.bat
 ```
 

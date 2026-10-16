@@ -2,6 +2,8 @@
 
 Guidance for staging/production deploys and environment management.
 
+> **Warning:** Firebase project `simplysoph-66c78` is shared with the live SimplySoph website. Its default Hosting site, Firestore rules and Storage rules belong to that website, so `firebase deploy`, `firebase deploy --only hosting` and the `scripts/deploy*` scripts would overwrite it. Until SimplyStyles has its own Hosting site or project, deploy Cloud Functions only, using the manual job in `.github/workflows/firebase-hosting-deploy.yml`.
+
 ### Consolidated Sources
 
 - DEPLOYMENT_CHECKLIST.md
@@ -205,13 +207,13 @@ flutter build web --release
 ### For Mac/Linux Users:
 
 ```bash
-./deploy.sh
+./scripts/deploy.sh
 ```
 
 ### For Windows Users:
 
 ```bash
-deploy.bat
+scripts\deploy.bat
 ```
 
 That's it! The script will automatically build and deploy your app. ✨
@@ -293,8 +295,8 @@ I've set up all the necessary configuration files for you:
 | `firestore.rules`        | Database security rules                 |
 | `storage.rules`          | File storage security rules             |
 | `firestore.indexes.json` | Database query optimization             |
-| `deploy.sh`              | Automated deployment script (Mac/Linux) |
-| `deploy.bat`             | Automated deployment script (Windows)   |
+| `scripts/deploy.sh`      | Automated deployment script (Mac/Linux) |
+| `scripts/deploy.bat`     | Automated deployment script (Windows)   |
 
 ---
 
@@ -305,8 +307,8 @@ Whenever you make changes to your app:
 1. **Make your code changes** in VS Code
 2. **Run the deploy script** again:
    ```bash
-   ./deploy.sh        # Mac/Linux
-   deploy.bat         # Windows
+   ./scripts/deploy.sh   # Mac/Linux
+   scripts\deploy.bat    # Windows
    ```
 
 Or manually:
@@ -373,12 +375,12 @@ npm install -g firebase-tools
 
 Install Flutter: https://docs.flutter.dev/get-started/install
 
-### "Permission denied" on deploy.sh
+### "Permission denied" on scripts/deploy.sh
 
 Make it executable:
 
 ```bash
-chmod +x deploy.sh
+chmod +x scripts/deploy.sh
 ```
 
 ### "Build failed"
@@ -418,7 +420,7 @@ But for now, the web app is the fastest way to get your app in people's hands!
 Run this command and watch the magic happen:
 
 ```bash
-./deploy.sh
+./scripts/deploy.sh
 ```
 
 Your app will be live in just a few minutes! 🚀✨
@@ -652,7 +654,7 @@ flutter build web
 
 ```bash
 # Option A: Use automated script
-deploy-upload-fix.bat
+scripts\deploy-upload-fix.bat
 
 # Option B: Manual deployment
 firebase deploy --only hosting
@@ -789,7 +791,7 @@ Before notifying investment team:
 
 If all checkboxes above are marked, you're ready to:
 
-1. Run `deploy-upload-fix.bat`
+1. Run `scripts\deploy-upload-fix.bat`
 2. Verify upload functionality
 3. Notify investment team
 4. Schedule demo

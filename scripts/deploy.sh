@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# WARNING: Firebase project simplysoph-66c78 is shared with the live SimplySoph
+# website. Its default Hosting site belongs to that website, so this script would
+# overwrite it. Do not run it until SimplyStyles has its own Hosting site.
+
 # SimplyStyles Firebase Deployment Script
 # This script builds and deploys your Flutter web app to Firebase Hosting
 
