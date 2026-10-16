@@ -1,13 +1,17 @@
 const {onCall} = require('firebase-functions/v2/https');
 const {onSchedule} = require('firebase-functions/v2/scheduler');
 const {onObjectFinalized} = require('firebase-functions/v2/storage');
-const admin = require('firebase-admin');
+// firebase-admin 14 removed the legacy namespaced API (admin.firestore(),
+// admin.storage(), admin.firestore.FieldValue), so use the modular entry points.
+const {initializeApp} = require('firebase-admin/app');
+const {getFirestore, FieldValue} = require('firebase-admin/firestore');
+const {getStorage} = require('firebase-admin/storage');
 const {VertexAI} = require('@google-cloud/vertexai');
 const vision = require('@google-cloud/vision');
 const axios = require('axios');
 const googleTrends = require('google-trends-api');
 
-admin.initializeApp();
+initializeApp();
 
 // Initialize Vision Client
 const visionClient = new vision.ImageAnnotatorClient();
@@ -46,7 +50,7 @@ exports.vortex_analyzeItem = onCall({region: 'us-central1'}, async (request) => 
   }
 
   // SSRF Protection: Use internal gs:// URI
-  const bucketName = admin.storage().bucket().name;
+  const bucketName = getStorage().bucket().name;
   const gcsUri = `gs://${bucketName}/${storagePath}`;
 
   const prompt = `Analyze this clothing item and return a JSON object with:
@@ -82,7 +86,7 @@ exports.vortex_generatePersonas = onCall({region: 'us-central1'}, async (request
   }
 
   const userId = request.auth.uid;
-  const wardrobeSnapshot = await admin.firestore()
+  const wardrobeSnapshot = await getFirestore()
     .collection('wardrobe_items')
     .where('userId', '==', userId)
     .get();
@@ -112,8 +116,8 @@ Return ONLY valid JSON array, no markdown.`;
   const jsonMatch = text.match(/\[[\s\S]*\]/);
   const personas = jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(text);
 
-  const batch = admin.firestore().batch();
-  const existingPersonas = await admin.firestore()
+  const batch = getFirestore().batch();
+  const existingPersonas = await getFirestore()
     .collection('style_personas')
     .where('userId', '==', userId)
     .get();
@@ -122,13 +126,13 @@ Return ONLY valid JSON array, no markdown.`;
 
   const personaRefs = [];
   personas.forEach(persona => {
-    const personaRef = admin.firestore().collection('style_personas').doc();
+    const personaRef = getFirestore().collection('style_personas').doc();
     personaRefs.push(personaRef);
     batch.set(personaRef, {
       userId,
       ...persona,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     });
   });
 
@@ -168,9 +172,9 @@ Return ONLY valid JSON array, no markdown.`;
     }
     
     if (matchingPersonas.length > 0) {
-      batch.update(admin.firestore().collection('wardrobe_items').doc(item.id), {
+      batch.update(getFirestore().collection('wardrobe_items').doc(item.id), {
         personaIds: matchingPersonas,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
       });
     }
   }
@@ -191,7 +195,7 @@ exports.vortex_calculateFit = onCall({region: 'us-central1'}, async (request) =>
     throw new Error('Item attributes are required');
   }
 
-  const personasSnapshot = await admin.firestore()
+  const personasSnapshot = await getFirestore()
     .collection('style_personas')
     .where('userId', '==', userId)
     .get();
@@ -234,12 +238,12 @@ Return ONLY valid JSON array, no markdown.`;
   const jsonMatch = text.match(/\[[\s\S]*\]/);
   const trends = jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(text);
 
-  const batch = admin.firestore().batch();
+  const batch = getFirestore().batch();
   trends.forEach(trend => {
-    const trendRef = admin.firestore().collection('trends').doc();
+    const trendRef = getFirestore().collection('trends').doc();
     batch.set(trendRef, {
       ...trend,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
     });
   });
 
@@ -259,7 +263,7 @@ exports.onImageUpload = onObjectFinalized({region: 'us-central1'}, async (event)
   const fileName = pathParts[pathParts.length - 1];
   const itemId = fileName.replace('.jpg', '');
 
-  const bucket = admin.storage().bucket(event.data.bucket);
+  const bucket = getStorage().bucket(event.data.bucket);
   const file = bucket.file(filePath);
   const [url] = await file.getSignedUrl({
     action: 'read',
@@ -293,7 +297,7 @@ Return ONLY valid JSON.`;
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     const analysis = jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(text);
 
-    const itemsSnapshot = await admin.firestore()
+    const itemsSnapshot = await getFirestore()
       .collection('wardrobe_items')
       .where('userId', '==', userId)
       .where('storageItemId', '==', itemId)
@@ -303,7 +307,7 @@ Return ONLY valid JSON.`;
     if (!itemsSnapshot.empty) {
       await itemsSnapshot.docs[0].ref.update({
         ...analysis,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
       });
       console.log(`AI analysis complete for item ${itemId}`);
     }
@@ -334,7 +338,7 @@ exports.scanItemWithVision = onCall({region: 'us-central1'}, async (request) => 
 
   try {
     // SSRF Protection: Use internal gs:// URI
-    const bucketName = admin.storage().bucket().name;
+    const bucketName = getStorage().bucket().name;
     const gcsUri = `gs://${bucketName}/${storagePath}`;
 
     // Perform label detection and logo detection
