@@ -22,7 +22,7 @@ Before you begin, ensure you have the following installed on your development ma
 - **Dart SDK** (comes with Flutter)
 - **Android Studio** or **Xcode** (for mobile development)
 - **Firebase CLI** - Install with `npm install -g firebase-tools`
-- **Node.js** (version 18 or higher) - [Download](https://nodejs.org/)
+- **Node.js** (version 22, for Cloud Functions) - [Download](https://nodejs.org/)
 - **Git** - [Download](https://git-scm.com/)
 
 ## Step 1: Firebase Project Setup
@@ -504,7 +504,7 @@ Follow this checklist to get your SimplyStyles app up and running!
 
 ## Optional: Deploy Firebase Functions (10 minutes)
 
-- [ ] Install [Node.js](https://nodejs.org/) (version 18+)
+- [ ] Install [Node.js](https://nodejs.org/) (version 22)
 - [ ] Install Firebase CLI: `npm install -g firebase-tools`
 - [ ] Login to Firebase: `firebase login`
 - [ ] Navigate to functions folder: `cd functions`
@@ -712,14 +712,9 @@ That's it! You've successfully hosted your Flutter web app on Firebase. Now you 
 
 - In the Firebase Console, add a Hosting site and follow instructions to deploy the `build/web` from your Flutter web build.
 
-6. Service account & GitHub Secrets (for CI/CD)
+6. CI/CD deploy identity
 
-- Create a service account with the `Firebase Hosting Admin` (or `Editor`) role.
-- Generate a JSON key for that service account.
-- In your GitHub repository settings > Secrets > Actions, add:
-  - `FIREBASE_SERVICE_ACCOUNT` : full JSON key contents (escaped as a single-line string)
-  - `FIREBASE_PROJECT_ID` : your Firebase project id
-  - `FIREBASE_TOKEN` : (optional) CI token created with `firebase login:ci` if you prefer token-based deploys
+- CI deploys only the Cloud Functions, with keyless Workload Identity Federation login: no JSON keys or tokens. A project Owner runs `scripts/setup-functions-deploy-identity.ps1` once; see [Deployment](Deployment.md#one-time-setup-for-keyless-deploys).
 
 7. Test locally
 

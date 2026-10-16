@@ -65,7 +65,7 @@ See our [Issues page](../../issues) for the full list. Key issues:
 ### Prerequisites
 - Flutter SDK 3.0+
 - Firebase CLI
-- Node.js 20 (for Cloud Functions)
+- Node.js 22 (for Cloud Functions)
 
 ### Installation
 
@@ -91,7 +91,7 @@ flutter run -d chrome
    ```bash
    firebase functions:config:set rapidapi.key="YOUR_KEY"
    ```
-3. **Deploy Functions**: run the manual **CI/CD** workflow in GitHub Actions (Run workflow), which deploys only this app's Cloud Functions. The Firebase project is shared with the SimplySoph website, so never deploy hosting or rules from this repo. See [Deployment](docs/Deployment.md).
+3. **Deploy Functions**: run the manual **CI/CD** workflow in GitHub Actions (Run workflow, on `main`). It deploys only this app's `simplystyles` functions codebase, with keyless Workload Identity Federation login. A project Owner first runs `scripts/setup-functions-deploy-identity.ps1` once. The Firebase project is shared with the SimplySoph website, so never deploy hosting or rules from this repo. See [Deployment](docs/Deployment.md#cloud-functions-deploy).
 
 ---
 
